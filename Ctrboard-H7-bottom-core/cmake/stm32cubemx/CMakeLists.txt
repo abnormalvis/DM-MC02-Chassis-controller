@@ -26,16 +26,26 @@ set(MX_Include_Dirs
 
 # STM32CubeMX generated application sources
 set(MX_Application_Src
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../Core/Src/main.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../Core/Src/gpio.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../Core/Src/drivers/main.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../Core/Src/drivers/gpio.c
     ${CMAKE_CURRENT_SOURCE_DIR}/../../Core/Src/freertos.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../Core/Src/adc.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../Core/Src/dma.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../Core/Src/fdcan.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../Core/Src/spi.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../Core/Src/tim.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../Core/Src/usart.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../Core/Src/usb_otg.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../Core/Src/drivers/adc.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../Core/Src/drivers/dma.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../Core/Src/drivers/fdcan.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../Core/Src/drivers/spi.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../Core/Src/drivers/tim.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../Core/Src/drivers/usart.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../Core/Src/drivers/usb_otg.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../Core/Src/app/protocol_unified_v0.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../Core/Src/app/protocol_legacy_v1.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../Core/Src/app/protocol_adapter.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../Core/Src/app/crsf_protocol.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../Core/Src/app/comm_dispatcher.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../Core/Src/app/comm_uart_rx.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../Core/Src/app/comm_usb_rx.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../Core/Src/app/can_protocol.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../Core/Src/app/can_task.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../Core/Src/app/app_tasks.c
     ${CMAKE_CURRENT_SOURCE_DIR}/../../Core/Src/stm32h7xx_it.c
     ${CMAKE_CURRENT_SOURCE_DIR}/../../Core/Src/stm32h7xx_hal_msp.c
     ${CMAKE_CURRENT_SOURCE_DIR}/../../Core/Src/stm32h7xx_hal_timebase_tim.c
@@ -102,7 +112,8 @@ set(MX_LINK_DIRS
 set(MX_LINK_LIBS 
     STM32_Drivers
     ${TOOLCHAIN_LINK_LIBRARIES}
-    FreeRTOS	
+    FreeRTOS
+	
 )
 # Interface library for includes and symbols
 add_library(stm32cubemx INTERFACE)

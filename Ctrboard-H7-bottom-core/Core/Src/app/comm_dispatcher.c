@@ -33,6 +33,15 @@ static void dispatch_unified(const comm_rx_item_t *item)
   {
     if (proto_adapter_on_unified_frame(&view, &cmd) && (cmd.valid != 0U))
     {
+      if ((item->link == (uint8_t)COMM_LINK_RS485_USART2) ||
+          (item->link == (uint8_t)COMM_LINK_RS485_USART3))
+      {
+        cmd.source = (uint8_t)OFFBOARD_SRC_RS485;
+      }
+      else if (item->link == (uint8_t)COMM_LINK_USB)
+      {
+        cmd.source = (uint8_t)OFFBOARD_SRC_USB;
+      }
       comm_dispatcher_on_ctrl_cmd(&cmd);
     }
   }

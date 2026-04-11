@@ -6,12 +6,13 @@ set(CMAKE_C_STANDARD_REQUIRED ON)
 
 add_executable(protocol_smoke_test
   protocol_smoke_test.c
-  ../Core/Src/protocol_unified_v0.c
-  ../Core/Src/protocol_legacy_v1.c
-  ../Core/Src/protocol_adapter.c
-  ../Core/Src/crsf_protocol.c
+  ../Core/Src/app/protocol_unified_v0.c
+  ../Core/Src/app/protocol_legacy_v1.c
+  ../Core/Src/app/protocol_adapter.c
+  ../Core/Src/app/crsf_protocol.c
 )
 
 target_include_directories(protocol_smoke_test PRIVATE
   ../Core/Inc
+  ../Core/Inc/app
 )
