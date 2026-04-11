@@ -1,0 +1,30 @@
+## Build artifacts
+**/build/
+**/CMakeFiles/
+**/CMakeCache.txt
+**/cmake_install.cmake
+**/compile_commands.json
+**/Makefile
+**/.ninja_*
+
+## Tool caches
+**/.cache/
+
+## Generic binaries and intermediate files
+**/*.o
+**/*.obj
+**/*.a
+**/*.lib
+**/*.so
+**/*.dll
+**/*.exe
+**/*.elf
+**/*.map
+**/*.bin
+**/*.hex
+
+## Keil / IDE generated files
+**/*.uvoptx
+**/*.uvguix.*
+**/*.axf
+**/*.lst
