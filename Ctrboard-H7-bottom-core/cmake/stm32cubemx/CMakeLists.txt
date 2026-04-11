@@ -43,6 +43,7 @@ set(MX_Application_Src
     ${CMAKE_CURRENT_SOURCE_DIR}/../../Core/Src/app/comm_dispatcher.c
     ${CMAKE_CURRENT_SOURCE_DIR}/../../Core/Src/app/comm_uart_rx.c
     ${CMAKE_CURRENT_SOURCE_DIR}/../../Core/Src/app/comm_usb_rx.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../Core/Src/app/key_task.c
     ${CMAKE_CURRENT_SOURCE_DIR}/../../Core/Src/app/can_protocol.c
     ${CMAKE_CURRENT_SOURCE_DIR}/../../Core/Src/app/can_task.c
     ${CMAKE_CURRENT_SOURCE_DIR}/../../Core/Src/app/app_tasks.c

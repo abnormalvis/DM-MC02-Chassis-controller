@@ -22,6 +22,7 @@
 #define PRIORITY_SAFETY           7   /* 安全/故障管理任务 */
 #define PRIORITY_LED              8   /* LED 指示任务 */
 #define PRIORITY_BUZZER           9   /* 蜂鸣器任务 */
+#define PRIORITY_KEY             10   /* 按键任务 */
 
 /* ============================================
  * 任务堆栈大小定义
@@ -35,6 +36,7 @@
 #define STACK_SIZE_SAFETY          256
 #define STACK_SIZE_LED             128
 #define STACK_SIZE_BUZZER          128
+#define STACK_SIZE_KEY             128
 
 /* ============================================
  * 任务周期定义 (ms)
@@ -48,6 +50,7 @@
 #define PERIOD_SAFETY          5       /* 200Hz 安全检查 */
 #define PERIOD_LED             20      /* 50Hz LED 更新 */
 #define PERIOD_BUZZER          10      /* 100Hz 蜂鸣器 */
+#define PERIOD_KEY             10      /* 100Hz 按键扫描 */
 
 /* ============================================
  * 控制模式定义
@@ -156,6 +159,12 @@ void LEDTask_Process(void);
  */
 void BuzzerTask_Init(void);
 void BuzzerTask_Process(void);
+
+/**
+ * @brief 按键任务
+ */
+void KeyTask_Init(void);
+void KeyTask_Process(void);
 
 /* ============================================
  * 公共接口 (供其他模块调用)

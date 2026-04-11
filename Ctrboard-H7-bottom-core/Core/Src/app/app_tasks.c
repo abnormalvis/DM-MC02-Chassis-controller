@@ -19,6 +19,7 @@
 #include "can_task.h"
 #include "comm_uart_rx.h"
 #include "comm_usb_rx.h"
+#include "key_task.h"
 #include "protocol_adapter.h"
 
 #define COMM_LINK_TIMEOUT_MS ((uint32_t)100U)
@@ -35,6 +36,13 @@ static const osThreadAttr_t s_usb_task_attr = {
   .name = "UsbComm",
   .stack_size = 256U * 4U,
   .priority = (osPriority_t)osPriorityBelowNormal
+};
+
+static osThreadId_t s_key_task_handle;
+static const osThreadAttr_t s_key_task_attr = {
+  .name = "KeyTask",
+  .stack_size = 128U * 4U,
+  .priority = (osPriority_t)osPriorityLow
 };
 
 static system_state_t s_system_state;
@@ -91,6 +99,19 @@ static void UsbCommTask(void *argument)
   }
 }
 
+static void KeyMonitorTask(void *argument)
+{
+  (void)argument;
+
+  KeyTask_Init();
+
+  for (;;)
+  {
+    KeyTask_Process();
+    osDelay(PERIOD_KEY);
+  }
+}
+
 static osThreadId_t s_comm_dispatcher_task_handle;
 static const osThreadAttr_t s_comm_dispatcher_task_attr = {
   .name = "CommDispatch",
@@ -119,6 +140,11 @@ void AppTasks_Create(void)
   if (s_usb_task_handle == 0U)
   {
     s_usb_task_handle = osThreadNew(UsbCommTask, 0U, &s_usb_task_attr);
+  }
+
+  if (s_key_task_handle == 0U)
+  {
+    s_key_task_handle = osThreadNew(KeyMonitorTask, 0U, &s_key_task_attr);
   }
 
   /* 初始化 CAN 任务 */
