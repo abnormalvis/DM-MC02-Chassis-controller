@@ -16,3 +16,25 @@ target_include_directories(protocol_smoke_test PRIVATE
   ../Core/Inc
   ../Core/Inc/app
 )
+
+add_executable(motor_control_task_test
+  motor_control_task_test.c
+  ../Core/Src/app/motor_control_task.c
+)
+
+target_include_directories(motor_control_task_test PRIVATE
+  stubs
+  ../Core/Inc
+  ../Core/Inc/app
+)
+
+add_executable(app_tasks_chain_test
+  app_tasks_chain_test.c
+  ../Core/Src/app/app_tasks.c
+)
+
+target_include_directories(app_tasks_chain_test PRIVATE
+  stubs
+  ../Core/Inc
+  ../Core/Inc/app
+)
