@@ -8,6 +8,7 @@
 /* USER CODE END Header */
 
 #include "protocol_adapter.h"
+#include <stddef.h>
 
 static proto_adapter_cfg_t g_cfg = {
   true,
@@ -24,7 +25,7 @@ static int16_t be_i16(uint8_t hi, uint8_t lo)
 
 void proto_adapter_init(const proto_adapter_cfg_t *cfg)
 {
-  if (cfg != 0U)
+  if (cfg != NULL)
   {
     g_cfg = *cfg;
   }
@@ -37,7 +38,7 @@ bool proto_adapter_legacy_rpm_to_chassis(const msg_cmd_set_wheel_rpm_t *rpm_cmd,
   float left_rpm;
   float right_rpm;
 
-  if ((rpm_cmd == 0U) || (out_cmd == 0U))
+  if ((rpm_cmd == NULL) || (out_cmd == NULL))
   {
     return false;
   }
@@ -68,7 +69,7 @@ bool proto_adapter_on_unified_frame(const proto_v0_frame_view_t *frame,
   const msg_cmd_set_chassis_vel_t *v;
   const msg_cmd_set_wheel_rpm_t *r;
 
-  if ((frame == 0U) || (out_cmd == 0U))
+  if ((frame == NULL) || (out_cmd == NULL))
   {
     return false;
   }
@@ -130,7 +131,7 @@ bool proto_adapter_on_legacy_frame(const legacy_v1_frame_t *frame,
 {
   msg_cmd_set_wheel_rpm_t rpm_cmd;
 
-  if ((frame == 0U) || (out_cmd == 0U) || (!g_cfg.enable_legacy_v1))
+  if ((frame == NULL) || (out_cmd == NULL) || (!g_cfg.enable_legacy_v1))
   {
     return false;
   }
@@ -151,7 +152,7 @@ bool proto_adapter_on_legacy_frame(const legacy_v1_frame_t *frame,
 
 void proto_adapter_fill_sta_motor(const motor_telemetry_t *mt, msg_sta_motor_t *out)
 {
-  if ((mt == 0U) || (out == 0U))
+  if ((mt == NULL) || (out == NULL))
   {
     return;
   }

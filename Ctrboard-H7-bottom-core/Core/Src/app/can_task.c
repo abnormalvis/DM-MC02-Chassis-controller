@@ -6,7 +6,6 @@
 
 #include "can_task.h"
 #include "can_protocol.h"
-#include "cmsis_os2.h"
 #include "main.h"
 #include <string.h>
 
@@ -20,8 +19,6 @@ static uint32_t g_last_recv_tick = 0;
 /* ============================================
  * 任务句柄
  * ============================================ */
-static osThreadId_t s_can_task_handle = NULL;
-
 /* 超时时间定义 (ms) */
 #define CAN_TIMEOUT_MS        100     /* CAN 通信超时判定 */
 
@@ -49,14 +46,6 @@ void CANTask_Init(void)
 
     /* 注册回调函数 */
     can_protocol_register_callback(can_data_callback);
-
-    /* 创建 CAN 任务 */
-    osThreadAttr_t attr = {
-        .name = "CANTask",
-        .stack_size = CAN_TASK_STACK_SIZE,
-        .priority = CAN_TASK_PRIORITY
-    };
-    s_can_task_handle = osThreadNew(CANTask_Process, NULL, &attr);
 }
 
 /* ============================================
@@ -93,20 +82,14 @@ uint8_t CANTask_IsConnected(void)
 /* ============================================
  * CAN 任务函数 (后台处理)
  * ============================================ */
-__NO_RETURN void CANTask_Process(void *argument)
+void CANTask_Process(void *argument)
 {
     (void)argument;
 
-    for (;;)
+    /* 单步处理：由 AppTasks 的包装线程控制周期 */
+    if (!CANTask_IsConnected())
     {
-        /* 任务周期: 10ms */
-        osDelay(10);
-
-        /* 检查连接状态 */
-        if (!CANTask_IsConnected())
-        {
-            /* CAN 失联处理 - 可以在这里触发告警或进入安全态 */
-            /* TODO: 可以添加告警逻辑，如 LED 闪烁等 */
-        }
+        /* CAN 失联处理 - 可以在这里触发告警或进入安全态 */
+        /* TODO: 可以添加告警逻辑，如 LED 闪烁等 */
     }
 }

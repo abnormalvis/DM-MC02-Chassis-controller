@@ -8,6 +8,7 @@
 /* USER CODE END Header */
 
 #include "protocol_unified_v0.h"
+#include <stddef.h>
 
 static uint16_t rd_le16(const uint8_t *p)
 {
@@ -42,7 +43,7 @@ uint16_t proto_v0_crc16_ccitt_false(const uint8_t *data, uint16_t len)
   uint16_t i;
   uint8_t j;
 
-  if (data == 0U)
+  if (data == NULL)
   {
     return 0U;
   }
@@ -76,7 +77,7 @@ bool proto_v0_try_decode(const uint8_t *buf,
   uint16_t crc_calc;
   uint16_t crc_recv;
 
-  if ((buf == 0U) || (out_view == 0U) || (out_total_len == 0U))
+  if ((buf == NULL) || (out_view == NULL) || (out_total_len == NULL))
   {
     return false;
   }
@@ -121,7 +122,7 @@ bool proto_v0_try_decode(const uint8_t *buf,
   out_view->hdr.seq = rd_le16(&buf[5]);
   out_view->hdr.ts_ms = rd_le32(&buf[7]);
   out_view->hdr.len = payload_len;
-  out_view->payload = (payload_len > 0U) ? &buf[13] : 0U;
+  out_view->payload = (payload_len > 0U) ? &buf[13] : NULL;
   out_view->crc16 = crc_recv;
   *out_total_len = total_len;
 
@@ -141,7 +142,7 @@ bool proto_v0_encode(uint16_t msg_id,
   uint16_t i;
   uint16_t crc;
 
-  if ((out_buf == 0U) || (out_len == 0U))
+  if ((out_buf == NULL) || (out_len == NULL))
   {
     return false;
   }
@@ -151,7 +152,7 @@ bool proto_v0_encode(uint16_t msg_id,
     return false;
   }
 
-  if ((payload_len > 0U) && (payload == 0U))
+  if ((payload_len > 0U) && (payload == NULL))
   {
     return false;
   }

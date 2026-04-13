@@ -8,13 +8,14 @@
 /* USER CODE END Header */
 
 #include "protocol_legacy_v1.h"
+#include <stddef.h>
 
 uint8_t legacy_v1_xor10(const uint8_t *frame_10_bytes)
 {
   uint8_t i;
   uint8_t x = 0U;
 
-  if (frame_10_bytes == 0U)
+  if (frame_10_bytes == NULL)
   {
     return 0U;
   }
@@ -28,7 +29,7 @@ uint8_t legacy_v1_xor10(const uint8_t *frame_10_bytes)
 
 bool legacy_v1_is_valid(const uint8_t frame[LEGACY_V1_FRAME_LEN])
 {
-  if (frame == 0U)
+  if (frame == NULL)
   {
     return false;
   }
@@ -45,7 +46,7 @@ void legacy_v1_make(uint8_t func, const uint8_t data8[8], uint8_t out_frame[LEGA
 {
   uint8_t i;
 
-  if (out_frame == 0U)
+  if (out_frame == NULL)
   {
     return;
   }
@@ -55,7 +56,7 @@ void legacy_v1_make(uint8_t func, const uint8_t data8[8], uint8_t out_frame[LEGA
 
   for (i = 0U; i < 8U; i++)
   {
-    out_frame[2U + i] = (data8 != 0U) ? data8[i] : 0U;
+    out_frame[2U + i] = (data8 != NULL) ? data8[i] : 0U;
   }
 
   out_frame[10] = legacy_v1_xor10(out_frame);
@@ -66,7 +67,7 @@ bool legacy_v1_parse(const uint8_t raw[LEGACY_V1_FRAME_LEN], legacy_v1_frame_t *
 {
   uint8_t i;
 
-  if ((raw == 0U) || (out == 0U))
+  if ((raw == NULL) || (out == NULL))
   {
     return false;
   }
