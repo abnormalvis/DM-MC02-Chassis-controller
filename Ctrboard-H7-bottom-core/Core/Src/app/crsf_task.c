@@ -19,7 +19,7 @@
 /* CRSF 通道范围 */
 #define CRSF_CH_VALUE_MIN       172
 #define CRSF_CH_VALUE_MAX       1811
-#define CRSF_CH_VALUE_MID        ((CRSF_CH_VALUE_MIN + CRSF_CH_VALUE_MAX) / 2)
+#define CRSF_TASK_CH_VALUE_MID  ((CRSF_CH_VALUE_MIN + CRSF_CH_VALUE_MAX) / 2)
 
 /* 模式通道定义 */
 #define CRSF_CH_THROTTLE        0   /* 油门通道 */
@@ -50,7 +50,7 @@ static float normalize_ch(int16_t ch_value)
     if (ch_value < CRSF_CH_VALUE_MIN) ch_value = CRSF_CH_VALUE_MIN;
     if (ch_value > CRSF_CH_VALUE_MAX) ch_value = CRSF_CH_VALUE_MAX;
 
-    float normalized = (float)(ch_value - CRSF_CH_VALUE_MID) / (float)(CRSF_CH_VALUE_MAX - CRSF_CH_VALUE_MIN) * 2.0f;
+    float normalized = (float)(ch_value - CRSF_TASK_CH_VALUE_MID) / (float)(CRSF_CH_VALUE_MAX - CRSF_CH_VALUE_MIN) * 2.0f;
     return normalized;
 }
 
