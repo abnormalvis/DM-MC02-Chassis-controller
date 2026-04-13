@@ -39,7 +39,7 @@ void can_protocol_init(void)
     }
 
     /* 激活接收 FIFO 0 通知 */
-    if (HAL_FDCAN_ActivateNotification(&hfdcan3, FDCAN_IT_RX_FIFO0_NEW_MESSAGE) != HAL_OK)
+    if (HAL_FDCAN_ActivateNotification(&hfdcan3, FDCAN_IT_RX_FIFO0_NEW_MESSAGE, 0) != HAL_OK)
     {
         Error_Handler();
     }
@@ -68,7 +68,7 @@ void can_send_control_cmd(uint8_t cmd, uint8_t param)
     txData[0] = cmd;
     txData[1] = param;
 
-    if (HAL_FDCAN_AddMessageToTxFIFOQ(&hfdcan3, &TxHeader, txData) != HAL_OK)
+    if (HAL_FDCAN_AddMessageToTxFifoQ(&hfdcan3, &TxHeader, txData) != HAL_OK)
     {
         Error_Handler();
     }
@@ -130,8 +130,5 @@ void HAL_FDCAN_RxFIFO0Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo0ITs)
                 g_callback(&g_current_data);
             }
         }
-
-        /* 释放 FIFO */
-        HAL_FDCAN_Unlock(hfdcan);
     }
 }

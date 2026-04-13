@@ -3,5 +3,6 @@
 
 void comm_dispatcher_init_queues(void);
 void CommDispatcherTask(void *argument);
+void comm_dispatcher_on_ctrl_cmd(const void *cmd);
 
 #endif

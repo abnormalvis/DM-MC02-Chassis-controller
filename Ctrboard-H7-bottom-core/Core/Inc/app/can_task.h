@@ -7,6 +7,7 @@
 #ifndef CAN_TASK_H
 #define CAN_TASK_H
 
+#include "cmsis_os2.h"
 #include "can_protocol.h"
 #include <stdint.h>
 
@@ -29,6 +30,6 @@ void CANTask_GetCurrent(int16_t *current_a, int16_t *current_b);
 uint8_t CANTask_IsConnected(void);
 
 /* CAN 任务处理函数 */
-void CANTask_Process(void);
+void CANTask_Process(void *argument);
 
 #endif /* CAN_TASK_H */

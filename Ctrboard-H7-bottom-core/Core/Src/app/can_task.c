@@ -5,8 +5,8 @@
  */
 
 #include "can_task.h"
-#include "can_protocol.h"
 #include "main.h"
+#include <stdint.h>
 #include <string.h>
 
 /* ============================================

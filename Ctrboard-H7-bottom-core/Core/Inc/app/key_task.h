@@ -16,7 +16,7 @@ typedef enum {
 } key_event_t;
 
 void KeyTask_Init(void);
-void KeyTask_Process(void);
+void KeyTask_Process(void *argument);
 
 uint8_t KeyTask_IsPressed(void);
 key_event_t KeyTask_GetAndClearEvent(void);

@@ -5,6 +5,8 @@
 
 #include "app_tasks.h"
 #include "cmsis_os2.h"
+#include "comm_dispatcher.h"
+#include "protocol_adapter.h"
 
 static uint32_t g_fake_tick = 0U;
 static int16_t g_current_a = 0;
@@ -13,6 +15,9 @@ static int16_t g_current_b = 0;
 static uint32_t g_comm_init_calls = 0U;
 static uint32_t g_can_init_calls = 0U;
 static uint32_t g_safety_estop_calls = 0U;
+static uint32_t g_motor_target_calls = 0U;
+static int16_t g_last_target_a = 0;
+static int16_t g_last_target_b = 0;
 
 typedef struct
 {
@@ -33,6 +38,9 @@ static void reset_fakes(void)
     g_comm_init_calls = 0U;
     g_can_init_calls = 0U;
     g_safety_estop_calls = 0U;
+    g_motor_target_calls = 0U;
+    g_last_target_a = 0;
+    g_last_target_b = 0;
     g_thread_count = 0U;
     memset(g_threads, 0, sizeof(g_threads));
 }
@@ -95,6 +103,12 @@ void CANTask_GetCurrent(int16_t *current_a, int16_t *current_b)
 
 void MotorControlTask_Init(void) {}
 void MotorControlTask_Process(void *argument) { (void)argument; }
+void MotorControlTask_SetTarget(int16_t rpm_a, int16_t rpm_b)
+{
+    g_last_target_a = rpm_a;
+    g_last_target_b = rpm_b;
+    g_motor_target_calls++;
+}
 void CRSFTask_Init(void) {}
 void CRSFTask_Process(void *argument) { (void)argument; }
 void USBTask_Init(void) {}
@@ -204,11 +218,74 @@ static void test_motor_state_bridge(void)
     assert(mstate.brake_active == 1U);
 }
 
+static void test_dispatcher_control_linkage(void)
+{
+    chassis_ctrl_cmd_t cmd;
+    chassis_cmd_t *offboard;
+    system_state_t state;
+
+    reset_fakes();
+    AppTasks_Create();
+
+    memset(&cmd, 0, sizeof(cmd));
+    cmd.vx_mps = 1.0f;
+    cmd.wz_rps = 0.0f;
+    cmd.mode = (uint8_t)CTRL_MODE_OFFBOARD;
+    cmd.source = (uint8_t)OFFBOARD_SRC_USB;
+    cmd.ts_ms = 456U;
+    cmd.valid = 1U;
+    cmd.estop = 0U;
+
+    g_fake_tick = 500U;
+    comm_dispatcher_on_ctrl_cmd(&cmd);
+
+    AppTasks_GetSystemState(&state);
+    assert(state.mode == MODE_OFFBOARD);
+    assert(state.usb_connected == 1U);
+    assert(state.last_update_tick == 500U);
+
+    offboard = AppTasks_GetOffboardCommand();
+    assert(offboard->vx_mps == 1.0f);
+    assert(offboard->wz_rps == 0.0f);
+    assert(offboard->timestamp == 456U);
+    assert(offboard->valid == 1U);
+
+    assert(g_motor_target_calls == 1U);
+    assert(g_last_target_a != 0 || g_last_target_b != 0);
+}
+
+static void test_dispatcher_estop_path(void)
+{
+    chassis_ctrl_cmd_t cmd;
+    system_state_t state;
+
+    reset_fakes();
+    AppTasks_Create();
+
+    memset(&cmd, 0, sizeof(cmd));
+    cmd.vx_mps = 1.0f;
+    cmd.wz_rps = 0.0f;
+    cmd.mode = (uint8_t)CTRL_MODE_OFFBOARD;
+    cmd.source = (uint8_t)OFFBOARD_SRC_USB;
+    cmd.ts_ms = 789U;
+    cmd.valid = 1U;
+    cmd.estop = 1U;
+
+    g_fake_tick = 600U;
+    comm_dispatcher_on_ctrl_cmd(&cmd);
+
+    assert(g_safety_estop_calls == 1U);
+    AppTasks_GetSystemState(&state);
+    assert(state.mode == MODE_BRAKE_PROTECT);
+}
+
 int main(void)
 {
     test_app_tasks_create_layout();
     test_control_mode_fault_and_estop_path();
     test_motor_state_bridge();
+    test_dispatcher_control_linkage();
+    test_dispatcher_estop_path();
 
     puts("app_tasks_chain_test: PASS");
     return 0;

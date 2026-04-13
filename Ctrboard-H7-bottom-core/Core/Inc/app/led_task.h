@@ -41,6 +41,6 @@ void LEDTask_SetMode(led_id_t id, led_mode_t mode);
 /**
  * @brief LED 任务处理 (在任务中调用)
  */
-void LEDTask_Process(void);
+void LEDTask_Process(void *argument);
 
 #endif /* LED_TASK_H */

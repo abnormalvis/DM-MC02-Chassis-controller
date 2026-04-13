@@ -28,3 +28,4 @@
 **/*.uvguix.*
 **/*.axf
 **/*.lst
+.vscode/settings.json

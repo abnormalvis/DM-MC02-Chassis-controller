@@ -1,0 +1,15 @@
+set(CMAKE_SYSTEM_NAME Generic)
+set(CMAKE_SYSTEM_PROCESSOR ARM)
+
+set(TOOLCHAIN_PREFIX "/opt/gcc-arm-none-eabi-9-2020-q2-update/bin/arm-none-eabi")
+set(CMAKE_C_COMPILER ${TOOLCHAIN_PREFIX}-gcc)
+set(CMAKE_CXX_COMPILER ${TOOLCHAIN_PREFIX}-g++)
+set(CMAKE_ASM_COMPILER ${TOOLCHAIN_PREFIX}-gcc)
+set(CMAKE_AR ${TOOLCHAIN_PREFIX}-ar)
+set(CMAKE_RANLIB ${TOOLCHAIN_PREFIX}-ranlib)
+set(CMAKE_OBJCOPY ${TOOLCHAIN_PREFIX}-objcopy)
+set(CMAKE_SIZE ${TOOLCHAIN_PREFIX}-size)
+
+set(CMAKE_C_FLAGS "-mcpu=cortex-m7 -mthumb -mfpu=fpv5-d16 -mfloat-abi=hard")
+set(CMAKE_CXX_FLAGS "-mcpu=cortex-m7 -mthumb -mfpu=fpv5-d16 -mfloat-abi=hard")
+set(CMAKE_EXE_LINKER_FLAGS "-T ${CMAKE_SOURCE_DIR}/LinkerScripts/STM32H723RBTx_FLASH.ld -mcpu=cortex-m7 -mthumb -mfpu=fpv5-d16 -mfloat-abi=hard -Wl,--gc-sections -specs=nosys.specs -specs=nano.specs")

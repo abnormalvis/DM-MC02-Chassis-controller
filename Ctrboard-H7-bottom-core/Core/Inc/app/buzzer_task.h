@@ -34,6 +34,6 @@ void BuzzerTask_SetMode(buzzer_mode_t mode);
 /**
  * @brief 蜂鸣器任务处理 (在任务中调用)
  */
-void BuzzerTask_Process(void);
+void BuzzerTask_Process(void *argument);
 
 #endif /* BUZZER_TASK_H */

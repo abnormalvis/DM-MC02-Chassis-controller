@@ -12,41 +12,33 @@ set(MX_Defines_Syms
 # STM32CubeMX generated include paths
 set(MX_Include_Dirs
     ${CMAKE_CURRENT_SOURCE_DIR}/../../Core/Inc
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../Core/Inc/drivers
     ${CMAKE_CURRENT_SOURCE_DIR}/../../Core/Inc/app
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../USB_DEVICE/App
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../USB_DEVICE/Target
     ${CMAKE_CURRENT_SOURCE_DIR}/../../Drivers/STM32H7xx_HAL_Driver/Inc
     ${CMAKE_CURRENT_SOURCE_DIR}/../../Drivers/STM32H7xx_HAL_Driver/Inc/Legacy
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../Middlewares/Third_Party/FreeRTOS/Source/include
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM4F
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../Drivers/CMSIS/RTOS2/Include
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../Middlewares/ST/STM32_USB_Device_Library/Core/Inc
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc
     ${CMAKE_CURRENT_SOURCE_DIR}/../../Drivers/CMSIS/Device/ST/STM32H7xx/Include
     ${CMAKE_CURRENT_SOURCE_DIR}/../../Drivers/CMSIS/Include
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../Drivers/CMSIS/RTOS2/Include
 )
 
 # STM32CubeMX generated application sources
 set(MX_Application_Src
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../Core/Src/drivers/main.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../Core/Src/drivers/gpio.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../Core/Src/freertos.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../Core/Src/drivers/adc.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../Core/Src/drivers/dma.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../Core/Src/drivers/fdcan.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../Core/Src/drivers/spi.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../Core/Src/drivers/tim.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../Core/Src/drivers/usart.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../Core/Src/drivers/usb_otg.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../Core/Src/app/protocol_unified_v0.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../Core/Src/app/protocol_legacy_v1.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../Core/Src/app/protocol_adapter.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../Core/Src/app/crsf_protocol.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../Core/Src/app/comm_dispatcher.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../Core/Src/app/comm_uart_rx.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../Core/Src/app/comm_usb_rx.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../Core/Src/app/key_task.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../Core/Src/app/can_protocol.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../Core/Src/app/can_task.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../Core/Src/app/app_tasks.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../USB_DEVICE/Target/usbd_conf.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../USB_DEVICE/App/usb_device.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../USB_DEVICE/App/usbd_desc.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../USB_DEVICE/App/usbd_cdc_if.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../Core/Src/main.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../Core/Src/gpio.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../Core/Src/adc.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../Core/Src/dma.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../Core/Src/fdcan.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../Core/Src/octospi.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../Core/Src/spi.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../Core/Src/tim.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../Core/Src/usart.c
     ${CMAKE_CURRENT_SOURCE_DIR}/../../Core/Src/stm32h7xx_it.c
     ${CMAKE_CURRENT_SOURCE_DIR}/../../Core/Src/stm32h7xx_hal_msp.c
     ${CMAKE_CURRENT_SOURCE_DIR}/../../Core/Src/stm32h7xx_hal_timebase_tim.c
@@ -55,13 +47,37 @@ set(MX_Application_Src
     ${CMAKE_CURRENT_SOURCE_DIR}/../../startup_stm32h723xx.s
 )
 
+set(APP_Application_Src
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../Core/Src/app/app_tasks.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../Core/Src/app/buzzer_task.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../Core/Src/app/can_protocol.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../Core/Src/app/can_task.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../Core/Src/app/cmsis_os2_shim.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../Core/Src/app/comm_dispatcher.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../Core/Src/app/comm_uart_rx.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../Core/Src/app/comm_usb_rx.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../Core/Src/app/crsf_protocol.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../Core/Src/app/crsf_task.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../Core/Src/app/imu_task.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../Core/Src/app/key_task.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../Core/Src/app/led_task.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../Core/Src/app/motor_control_task.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../Core/Src/app/protocol_adapter.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../Core/Src/app/protocol_legacy_v1.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../Core/Src/app/protocol_unified_v0.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../Core/Src/app/rs485_task.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../Core/Src/app/safety_task.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../Core/Src/app/usb_task.c
+)
+
 # STM32 HAL/LL Drivers
 set(STM32_Drivers_Src
     ${CMAKE_CURRENT_SOURCE_DIR}/../../Core/Src/system_stm32h7xx.c
     ${CMAKE_CURRENT_SOURCE_DIR}/../../Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_tim.c
     ${CMAKE_CURRENT_SOURCE_DIR}/../../Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_tim_ex.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_adc.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_adc_ex.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_pcd.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_pcd_ex.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_ll_usb.c
     ${CMAKE_CURRENT_SOURCE_DIR}/../../Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_rcc.c
     ${CMAKE_CURRENT_SOURCE_DIR}/../../Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_rcc_ex.c
     ${CMAKE_CURRENT_SOURCE_DIR}/../../Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_flash.c
@@ -78,31 +94,24 @@ set(STM32_Drivers_Src
     ${CMAKE_CURRENT_SOURCE_DIR}/../../Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_i2c.c
     ${CMAKE_CURRENT_SOURCE_DIR}/../../Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_i2c_ex.c
     ${CMAKE_CURRENT_SOURCE_DIR}/../../Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_exti.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_adc.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_adc_ex.c
     ${CMAKE_CURRENT_SOURCE_DIR}/../../Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_fdcan.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_ospi.c
     ${CMAKE_CURRENT_SOURCE_DIR}/../../Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_spi.c
     ${CMAKE_CURRENT_SOURCE_DIR}/../../Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_spi_ex.c
     ${CMAKE_CURRENT_SOURCE_DIR}/../../Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_uart.c
     ${CMAKE_CURRENT_SOURCE_DIR}/../../Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_uart_ex.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_pcd.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_pcd_ex.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_ll_usb.c
 )
 
 # Drivers Midllewares
 
 
-set(FreeRTOS_Src
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../Middlewares/Third_Party/FreeRTOS/Source/portable/Common/mpu_wrappers_v2.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../Middlewares/Third_Party/FreeRTOS/Source/croutine.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../Middlewares/Third_Party/FreeRTOS/Source/event_groups.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../Middlewares/Third_Party/FreeRTOS/Source/list.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../Middlewares/Third_Party/FreeRTOS/Source/queue.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../Middlewares/Third_Party/FreeRTOS/Source/stream_buffer.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../Middlewares/Third_Party/FreeRTOS/Source/tasks.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../Middlewares/Third_Party/FreeRTOS/Source/timers.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2/cmsis_os2.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../Middlewares/Third_Party/FreeRTOS/Source/portable/MemMang/heap_4.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM4F/port.c
+set(USB_Device_Library_Src
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../Middlewares/ST/STM32_USB_Device_Library/Core/Src/usbd_core.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../Middlewares/ST/STM32_USB_Device_Library/Core/Src/usbd_ctlreq.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../Middlewares/ST/STM32_USB_Device_Library/Core/Src/usbd_ioreq.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Src/usbd_cdc.c
 )
 
 # Link directories setup
@@ -113,7 +122,7 @@ set(MX_LINK_DIRS
 set(MX_LINK_LIBS 
     STM32_Drivers
     ${TOOLCHAIN_LINK_LIBRARIES}
-    FreeRTOS
+    USB_Device_Library
 	
 )
 # Interface library for includes and symbols
@@ -127,13 +136,14 @@ target_sources(STM32_Drivers PRIVATE ${STM32_Drivers_Src})
 target_link_libraries(STM32_Drivers PUBLIC stm32cubemx)
 
 
-# Create FreeRTOS static library
-add_library(FreeRTOS OBJECT)
-target_sources(FreeRTOS PRIVATE ${FreeRTOS_Src})
-target_link_libraries(FreeRTOS PUBLIC stm32cubemx)
+# Create USB_Device_Library static library
+add_library(USB_Device_Library OBJECT)
+target_sources(USB_Device_Library PRIVATE ${USB_Device_Library_Src})
+target_link_libraries(USB_Device_Library PUBLIC stm32cubemx)
 
 # Add STM32CubeMX generated application sources to the project
 target_sources(${CMAKE_PROJECT_NAME} PRIVATE ${MX_Application_Src})
+target_sources(${CMAKE_PROJECT_NAME} PRIVATE ${APP_Application_Src})
 
 # Link directories setup
 target_link_directories(${CMAKE_PROJECT_NAME} PRIVATE ${MX_LINK_DIRS})

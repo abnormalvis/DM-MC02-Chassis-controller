@@ -110,61 +110,61 @@ void AppTasks_Create(void);
  * @brief 电机控制任务
  */
 void MotorControlTask_Init(void);
-void MotorControlTask_Process(void);
+void MotorControlTask_Process(void *argument);
 
 /**
  * @brief CRSF 接收任务
  */
 void CRSFTask_Init(void);
-void CRSFTask_Process(void);
+void CRSFTask_Process(void *argument);
 
 /**
  * @brief CAN 通信任务
  */
 void CANTask_Init(void);
-void CANTask_Process(void);
+void CANTask_Process(void *argument);
 
 /**
  * @brief USB 通信任务
  */
 void USBTask_Init(void);
-void USBTask_Process(void);
+void USBTask_Process(void *argument);
 
 /**
  * @brief RS485 通信任务
  */
 void RS485Task_Init(void);
-void RS485Task_Process(void);
+void RS485Task_Process(void *argument);
 
 /**
  * @brief IMU 采集任务
  */
 void IMUTask_Init(void);
-void IMUTask_Process(void);
+void IMUTask_Process(void *argument);
 
 /**
  * @brief 安全/故障管理任务
  */
 void SafetyTask_Init(void);
-void SafetyTask_Process(void);
+void SafetyTask_Process(void *argument);
 
 /**
  * @brief LED 指示任务
  */
 void LEDTask_Init(void);
-void LEDTask_Process(void);
+void LEDTask_Process(void *argument);
 
 /**
  * @brief 蜂鸣器任务
  */
 void BuzzerTask_Init(void);
-void BuzzerTask_Process(void);
+void BuzzerTask_Process(void *argument);
 
 /**
  * @brief 按键任务
  */
 void KeyTask_Init(void);
-void KeyTask_Process(void);
+void KeyTask_Process(void *argument);
 
 /* ============================================
  * 公共接口 (供其他模块调用)

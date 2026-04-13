@@ -1,285 +1,458 @@
-/* USER CODE BEGIN Header */
 /**
   ******************************************************************************
   * @file    app_tasks.c
-  * @brief   Application task creation template implementation.
+  * @brief   Application task creation and management.
   ******************************************************************************
   */
-/* USER CODE END Header */
 
 #include "app_tasks.h"
-
 #include "cmsis_os2.h"
-
 #include <string.h>
-
 #include "main.h"
-
 #include "comm_dispatcher.h"
 #include "can_task.h"
-#include "comm_uart_rx.h"
-#include "comm_usb_rx.h"
-#include "key_task.h"
+#include "motor_control_task.h"
+#include "led_task.h"
+#include "buzzer_task.h"
+#include "crsf_task.h"
+#include "usb_task.h"
+#include "rs485_task.h"
+#include "imu_task.h"
+#include "safety_task.h"
 #include "protocol_adapter.h"
 
-#define COMM_LINK_TIMEOUT_MS ((uint32_t)100U)
-
-static osThreadId_t s_uart_task_handle;
-static const osThreadAttr_t s_uart_task_attr = {
-  .name = "UartComm",
-  .stack_size = 256U * 4U,
-  .priority = (osPriority_t)osPriorityNormal
-};
-
+/* 任务句柄定义 */
+static osThreadId_t s_motor_task_handle;
+static osThreadId_t s_crsf_task_handle;
+static osThreadId_t s_can_task_handle;
 static osThreadId_t s_usb_task_handle;
-static const osThreadAttr_t s_usb_task_attr = {
-  .name = "UsbComm",
-  .stack_size = 256U * 4U,
-  .priority = (osPriority_t)osPriorityBelowNormal
-};
+static osThreadId_t s_rs485_task_handle;
+static osThreadId_t s_imu_task_handle;
+static osThreadId_t s_safety_task_handle;
+static osThreadId_t s_led_task_handle;
+static osThreadId_t s_buzzer_task_handle;
+static osThreadId_t s_comm_dispatcher_task_handle;
 
-static osThreadId_t s_key_task_handle;
-static const osThreadAttr_t s_key_task_attr = {
-  .name = "KeyTask",
-  .stack_size = 128U * 4U,
-  .priority = (osPriority_t)osPriorityLow
-};
-
+/* 系统状态 */
 static system_state_t s_system_state;
 static chassis_cmd_t s_rc_cmd;
 static chassis_cmd_t s_offboard_cmd;
 
-static chassis_cmd_t s_usb_cmd;
-static chassis_cmd_t s_rs485_cmd;
+/* 任务函数原型 */
+__NO_RETURN static void MotorControlTask(void *argument);
+__NO_RETURN static void CRSFTask(void *argument);
+__NO_RETURN static void CANTaskWrapper(void *argument);
+__NO_RETURN static void USBTaskWrapper(void *argument);
+__NO_RETURN static void RS485TaskWrapper(void *argument);
+__NO_RETURN static void IMUTaskWrapper(void *argument);
+__NO_RETURN static void SafetyTaskWrapper(void *argument);
+__NO_RETURN static void LEDTaskWrapper(void *argument);
+__NO_RETURN static void BuzzerTaskWrapper(void *argument);
 
-static uint32_t s_last_rs485_tick;
+#define APP_VX_GAIN_RPM_PER_MPS   400.0f
+#define APP_WZ_GAIN_RPM_PER_RPS   100.0f
+#define APP_RPM_LIMIT             900
 
-static void update_uart_link_state(void)
+static int16_t app_clamp_rpm(float rpm)
 {
-  uint32_t now = HAL_GetTick();
-  uint32_t crsf_tick = comm_uart_rx_get_last_tick(COMM_LINK_CRSF_UART);
-  uint32_t rs485_2_tick = comm_uart_rx_get_last_tick(COMM_LINK_RS485_USART2);
-  uint32_t rs485_3_tick = comm_uart_rx_get_last_tick(COMM_LINK_RS485_USART3);
+    if (rpm > (float)APP_RPM_LIMIT)
+    {
+        rpm = (float)APP_RPM_LIMIT;
+    }
+    else if (rpm < (float)(-APP_RPM_LIMIT))
+    {
+        rpm = (float)(-APP_RPM_LIMIT);
+    }
 
-  s_system_state.rc_connected = ((crsf_tick != 0U) && ((now - crsf_tick) <= COMM_LINK_TIMEOUT_MS)) ? 1U : 0U;
-
-  s_system_state.rs485_connected = (((rs485_2_tick != 0U) && ((now - rs485_2_tick) <= COMM_LINK_TIMEOUT_MS)) ||
-                                    ((rs485_3_tick != 0U) && ((now - rs485_3_tick) <= COMM_LINK_TIMEOUT_MS)))
-                                     ? 1U
-                                     : 0U;
+    return (int16_t)rpm;
 }
 
-static void update_usb_link_state(void)
+static void app_chassis_cmd_to_rpm(const chassis_ctrl_cmd_t *cmd, int16_t *rpm_left, int16_t *rpm_right)
 {
-  uint32_t now = HAL_GetTick();
-  uint32_t usb_tick = comm_usb_rx_get_last_tick();
-  s_system_state.usb_connected = ((usb_tick != 0U) && ((now - usb_tick) <= COMM_LINK_TIMEOUT_MS)) ? 1U : 0U;
-}
+    float left;
+    float right;
 
-static void UartCommTask(void *argument)
-{
-  (void)argument;
+    left = cmd->vx_mps * APP_VX_GAIN_RPM_PER_MPS - cmd->wz_rps * APP_WZ_GAIN_RPM_PER_RPS;
+    right = cmd->vx_mps * APP_VX_GAIN_RPM_PER_MPS + cmd->wz_rps * APP_WZ_GAIN_RPM_PER_RPS;
 
-  for (;;)
-  {
-    update_uart_link_state();
-    s_system_state.can_connected = CANTask_IsConnected();
-    osDelay(PERIOD_RS485);
-  }
-}
-
-static void UsbCommTask(void *argument)
-{
-  (void)argument;
-
-  for (;;)
-  {
-    update_usb_link_state();
-    osDelay(PERIOD_USB);
-  }
-}
-
-static void KeyMonitorTask(void *argument)
-{
-  (void)argument;
-
-  KeyTask_Init();
-
-  for (;;)
-  {
-    KeyTask_Process();
-    osDelay(PERIOD_KEY);
-  }
-}
-
-static osThreadId_t s_comm_dispatcher_task_handle;
-static const osThreadAttr_t s_comm_dispatcher_task_attr = {
-  .name = "CommDispatch",
-  .stack_size = 512U * 4U,
-  .priority = (osPriority_t)osPriorityAboveNormal
-};
-
-void AppTasks_Create(void)
-{
-  memset(&s_system_state, 0, sizeof(s_system_state));
-  s_system_state.mode = MODE_IDLE;
-
-  comm_dispatcher_init_queues();
-  comm_uart_rx_init();
-
-  if (s_comm_dispatcher_task_handle == 0U)
-  {
-    s_comm_dispatcher_task_handle = osThreadNew(CommDispatcherTask, 0U, &s_comm_dispatcher_task_attr);
-  }
-
-  if (s_uart_task_handle == 0U)
-  {
-    s_uart_task_handle = osThreadNew(UartCommTask, 0U, &s_uart_task_attr);
-  }
-
-  if (s_usb_task_handle == 0U)
-  {
-    s_usb_task_handle = osThreadNew(UsbCommTask, 0U, &s_usb_task_attr);
-  }
-
-  if (s_key_task_handle == 0U)
-  {
-    s_key_task_handle = osThreadNew(KeyMonitorTask, 0U, &s_key_task_attr);
-  }
-
-  /* 初始化 CAN 任务 */
-  CANTask_Init();
-}
-
-void AppTasks_GetSystemState(system_state_t *state)
-{
-  if (state != NULL)
-  {
-    *state = s_system_state;
-  }
-}
-
-void AppTasks_SetControlMode(control_mode_t mode)
-{
-  s_system_state.mode = mode;
-  s_system_state.last_update_tick = HAL_GetTick();
-}
-
-chassis_cmd_t *AppTasks_GetRCCommand(void)
-{
-  return &s_rc_cmd;
-}
-
-chassis_cmd_t *AppTasks_GetOffboardCommand(void)
-{
-  return &s_offboard_cmd;
-}
-
-void AppTasks_GetMotorState(motor_state_t *state)
-{
-  int16_t ia = 0;
-  int16_t ib = 0;
-
-  if (state == NULL)
-  {
-    return;
-  }
-
-  CANTask_GetCurrent(&ia, &ib);
-
-  memset(state, 0, sizeof(*state));
-  state->current_a = ia;
-  state->current_b = ib;
-  state->brake_active = (s_system_state.mode == MODE_BRAKE_PROTECT) ? 1U : 0U;
-}
-
-void AppTasks_TriggerEStop(void)
-{
-  s_system_state.mode = MODE_BRAKE_PROTECT;
-  s_system_state.last_update_tick = HAL_GetTick();
-}
-
-void AppTasks_SetFault(uint32_t fault_bit)
-{
-  s_system_state.fault_bits |= fault_bit;
-  s_system_state.last_update_tick = HAL_GetTick();
-}
-
-void AppTasks_ClearFault(uint32_t fault_bit)
-{
-  s_system_state.fault_bits &= ~fault_bit;
-  s_system_state.last_update_tick = HAL_GetTick();
+    *rpm_left = app_clamp_rpm(left);
+    *rpm_right = app_clamp_rpm(right);
 }
 
 void comm_dispatcher_on_ctrl_cmd(const void *cmd)
 {
-  const chassis_ctrl_cmd_t *ctrl = (const chassis_ctrl_cmd_t *)cmd;
-  uint32_t now = HAL_GetTick();
+    const chassis_ctrl_cmd_t *ctrl_cmd = (const chassis_ctrl_cmd_t *)cmd;
+    int16_t rpm_left;
+    int16_t rpm_right;
+    control_mode_t mode;
 
-  if ((ctrl == NULL) || (ctrl->valid == 0U))
-  {
-    return;
-  }
-
-  if (ctrl->estop != 0U)
-  {
-    AppTasks_TriggerEStop();
-    return;
-  }
-
-  if (ctrl->mode == (uint8_t)CTRL_MODE_RC)
-  {
-    s_rc_cmd.vx_mps = ctrl->vx_mps;
-    s_rc_cmd.wz_rps = ctrl->wz_rps;
-    s_rc_cmd.estop = ctrl->estop;
-    s_rc_cmd.valid = ctrl->valid;
-    s_rc_cmd.timestamp = now;
-
-    s_system_state.mode = MODE_RC;
-    s_system_state.last_update_tick = now;
-    s_system_state.rc_connected = 1U;
-    return;
-  }
-
-  if (ctrl->mode == (uint8_t)CTRL_MODE_OFFBOARD)
-  {
-    if (ctrl->source == (uint8_t)OFFBOARD_SRC_USB)
+    if ((ctrl_cmd == NULL) || (ctrl_cmd->valid == 0U))
     {
-      s_usb_cmd.vx_mps = ctrl->vx_mps;
-      s_usb_cmd.wz_rps = ctrl->wz_rps;
-      s_usb_cmd.estop = ctrl->estop;
-      s_usb_cmd.valid = ctrl->valid;
-      s_usb_cmd.timestamp = now;
-      comm_usb_rx_mark_connected();
-    }
-    else if (ctrl->source == (uint8_t)OFFBOARD_SRC_RS485)
-    {
-      s_rs485_cmd.vx_mps = ctrl->vx_mps;
-      s_rs485_cmd.wz_rps = ctrl->wz_rps;
-      s_rs485_cmd.estop = ctrl->estop;
-      s_rs485_cmd.valid = ctrl->valid;
-      s_rs485_cmd.timestamp = now;
-      s_last_rs485_tick = now;
+        return;
     }
 
-    if (comm_usb_rx_get_last_tick() >= s_last_rs485_tick)
+    if (ctrl_cmd->estop != 0U)
     {
-      s_offboard_cmd = s_usb_cmd;
+        AppTasks_TriggerEStop();
+        return;
+    }
+
+    mode = MODE_IDLE;
+    if (ctrl_cmd->mode == (uint8_t)CTRL_MODE_RC)
+    {
+        mode = MODE_RC;
+    }
+    else if (ctrl_cmd->mode == (uint8_t)CTRL_MODE_OFFBOARD)
+    {
+        mode = MODE_OFFBOARD;
+    }
+
+    s_system_state.mode = mode;
+    s_system_state.rc_connected = 0U;
+    s_system_state.usb_connected = 0U;
+    s_system_state.rs485_connected = 0U;
+
+    if (ctrl_cmd->source == (uint8_t)OFFBOARD_SRC_USB)
+    {
+        s_system_state.usb_connected = 1U;
+    }
+    else if (ctrl_cmd->source == (uint8_t)OFFBOARD_SRC_RS485)
+    {
+        s_system_state.rs485_connected = 1U;
     }
     else
     {
-      s_offboard_cmd = s_rs485_cmd;
+        s_system_state.rc_connected = 1U;
     }
 
-    s_system_state.mode = MODE_OFFBOARD;
-    s_system_state.last_update_tick = now;
-    update_usb_link_state();
-    return;
-  }
+    if (mode == MODE_RC)
+    {
+        s_rc_cmd.vx_mps = ctrl_cmd->vx_mps;
+        s_rc_cmd.wz_rps = ctrl_cmd->wz_rps;
+        s_rc_cmd.estop = ctrl_cmd->estop;
+        s_rc_cmd.valid = ctrl_cmd->valid;
+        s_rc_cmd.timestamp = ctrl_cmd->ts_ms;
+    }
+    else
+    {
+        s_offboard_cmd.vx_mps = ctrl_cmd->vx_mps;
+        s_offboard_cmd.wz_rps = ctrl_cmd->wz_rps;
+        s_offboard_cmd.estop = ctrl_cmd->estop;
+        s_offboard_cmd.valid = ctrl_cmd->valid;
+        s_offboard_cmd.timestamp = ctrl_cmd->ts_ms;
+    }
 
-  if (ctrl->mode == (uint8_t)CTRL_MODE_IDLE)
-  {
+    app_chassis_cmd_to_rpm(ctrl_cmd, &rpm_left, &rpm_right);
+    MotorControlTask_SetTarget(rpm_left, rpm_right);
+    s_system_state.last_update_tick = HAL_GetTick();
+}
+
+/**
+ * @brief 创建所有应用层任务
+ */
+void AppTasks_Create(void)
+{
+    /* 初始化系统状态 */
+    memset(&s_system_state, 0, sizeof(s_system_state));
     s_system_state.mode = MODE_IDLE;
-    s_system_state.last_update_tick = now;
-  }
+
+    /* 初始化各模块 */
+    comm_dispatcher_init_queues();
+
+    /* 创建通信分发任务 */
+    static const osThreadAttr_t comm_attr = {
+        .name = "CommDispatch",
+        .stack_size = 512U * 4U,
+        .priority = (osPriority_t)osPriorityAboveNormal
+    };
+    s_comm_dispatcher_task_handle = osThreadNew(CommDispatcherTask, NULL, &comm_attr);
+
+    /* 创建电机控制任务 (1kHz) */
+    static const osThreadAttr_t motor_attr = {
+        .name = "MotorControl",
+        .stack_size = STACK_SIZE_MOTOR_CONTROL * 4,
+        .priority = (osPriority_t)osPriorityAboveNormal
+    };
+    s_motor_task_handle = osThreadNew(MotorControlTask, NULL, &motor_attr);
+
+    /* 创建 CRSF 接收任务 (1kHz) */
+    static const osThreadAttr_t crsf_attr = {
+        .name = "CRSFTask",
+        .stack_size = STACK_SIZE_CRSF * 4,
+        .priority = (osPriority_t)PRIORITY_CRSF + 1
+    };
+    s_crsf_task_handle = osThreadNew(CRSFTask, NULL, &crsf_attr);
+
+    /* 创建 CAN 通信任务 (100Hz) */
+    static const osThreadAttr_t can_attr = {
+        .name = "CANTask",
+        .stack_size = STACK_SIZE_CAN * 4,
+        .priority = (osPriority_t)PRIORITY_CAN + 1
+    };
+    s_can_task_handle = osThreadNew(CANTaskWrapper, NULL, &can_attr);
+    CANTask_Init();
+
+    /* 创建 USB 通信任务 (100Hz) */
+    static const osThreadAttr_t usb_attr = {
+        .name = "USBTask",
+        .stack_size = STACK_SIZE_USB * 4,
+        .priority = (osPriority_t)PRIORITY_USB + 1
+    };
+    s_usb_task_handle = osThreadNew(USBTaskWrapper, NULL, &usb_attr);
+
+    /* 创建 RS485 通信任务 (100Hz) */
+    static const osThreadAttr_t rs485_attr = {
+        .name = "RS485Task",
+        .stack_size = STACK_SIZE_RS485 * 4,
+        .priority = (osPriority_t)PRIORITY_RS485 + 1
+    };
+    s_rs485_task_handle = osThreadNew(RS485TaskWrapper, NULL, &rs485_attr);
+
+    /* 创建 IMU 采集任务 (1kHz) */
+    static const osThreadAttr_t imu_attr = {
+        .name = "IMUTask",
+        .stack_size = STACK_SIZE_IMU * 4,
+        .priority = (osPriority_t)PRIORITY_IMU + 1
+    };
+    s_imu_task_handle = osThreadNew(IMUTaskWrapper, NULL, &imu_attr);
+
+    /* 创建安全/故障管理任务 (200Hz) */
+    static const osThreadAttr_t safety_attr = {
+        .name = "SafetyTask",
+        .stack_size = STACK_SIZE_SAFETY * 4,
+        .priority = (osPriority_t)PRIORITY_SAFETY + 1
+    };
+    s_safety_task_handle = osThreadNew(SafetyTaskWrapper, NULL, &safety_attr);
+
+    /* 创建 LED 指示任务 (50Hz) */
+    static const osThreadAttr_t led_attr = {
+        .name = "LEDTask",
+        .stack_size = STACK_SIZE_LED * 4,
+        .priority = (osPriority_t)PRIORITY_LED + 1
+    };
+    s_led_task_handle = osThreadNew(LEDTaskWrapper, NULL, &led_attr);
+
+    /* 创建蜂鸣器任务 (100Hz) */
+    static const osThreadAttr_t buzzer_attr = {
+        .name = "BuzzerTask",
+        .stack_size = STACK_SIZE_BUZZER * 4,
+        .priority = (osPriority_t)PRIORITY_BUZZER + 1
+    };
+    s_buzzer_task_handle = osThreadNew(BuzzerTaskWrapper, NULL, &buzzer_attr);
+}
+
+/**
+ * @brief 电机控制任务线程
+ */
+__NO_RETURN static void MotorControlTask(void *argument)
+{
+    (void)argument;
+    MotorControlTask_Init();
+
+    for (;;)
+    {
+        MotorControlTask_Process(NULL);
+        osDelay(PERIOD_MOTOR_CONTROL);
+    }
+}
+
+/**
+ * @brief CRSF 接收任务线程
+ */
+__NO_RETURN static void CRSFTask(void *argument)
+{
+    (void)argument;
+    CRSFTask_Init();
+
+    for (;;)
+    {
+        CRSFTask_Process(NULL);
+        osDelay(PERIOD_CRSF);
+    }
+}
+
+/**
+ * @brief CAN 任务包装器
+ */
+__NO_RETURN static void CANTaskWrapper(void *argument)
+{
+    (void)argument;
+
+    for (;;)
+    {
+        CANTask_Process(NULL);
+        osDelay(PERIOD_CAN);
+    }
+}
+
+/**
+ * @brief USB 任务包装器
+ */
+__NO_RETURN static void USBTaskWrapper(void *argument)
+{
+    (void)argument;
+    USBTask_Init();
+
+    for (;;)
+    {
+        USBTask_Process(NULL);
+        osDelay(PERIOD_USB);
+    }
+}
+
+/**
+ * @brief RS485 任务包装器
+ */
+__NO_RETURN static void RS485TaskWrapper(void *argument)
+{
+    (void)argument;
+    RS485Task_Init();
+
+    for (;;)
+    {
+        RS485Task_Process(NULL);
+        osDelay(PERIOD_RS485);
+    }
+}
+
+/**
+ * @brief IMU 任务包装器
+ */
+__NO_RETURN static void IMUTaskWrapper(void *argument)
+{
+    (void)argument;
+    IMUTask_Init();
+
+    for (;;)
+    {
+        IMUTask_Process(NULL);
+        osDelay(PERIOD_IMU);
+    }
+}
+
+/**
+ * @brief 安全任务包装器
+ */
+__NO_RETURN static void SafetyTaskWrapper(void *argument)
+{
+    (void)argument;
+    SafetyTask_Init();
+
+    for (;;)
+    {
+        SafetyTask_Process(NULL);
+        osDelay(PERIOD_SAFETY);
+    }
+}
+
+/**
+ * @brief LED 任务包装器
+ */
+__NO_RETURN static void LEDTaskWrapper(void *argument)
+{
+    (void)argument;
+    LEDTask_Init();
+
+    for (;;)
+    {
+        LEDTask_Process(NULL);
+        osDelay(PERIOD_LED);
+    }
+}
+
+/**
+ * @brief 蜂鸣器任务包装器
+ */
+__NO_RETURN static void BuzzerTaskWrapper(void *argument)
+{
+    (void)argument;
+    BuzzerTask_Init();
+
+    for (;;)
+    {
+        BuzzerTask_Process(NULL);
+        osDelay(PERIOD_BUZZER);
+    }
+}
+
+/**
+ * @brief 获取系统状态
+ */
+void AppTasks_GetSystemState(system_state_t *state)
+{
+    if (state != NULL)
+    {
+        *state = s_system_state;
+    }
+}
+
+/**
+ * @brief 设置控制模式
+ */
+void AppTasks_SetControlMode(control_mode_t mode)
+{
+    s_system_state.mode = mode;
+    s_system_state.last_update_tick = HAL_GetTick();
+}
+
+/**
+ * @brief 获取 RC 控制命令
+ */
+chassis_cmd_t *AppTasks_GetRCCommand(void)
+{
+    return &s_rc_cmd;
+}
+
+/**
+ * @brief 获取上位机控制命令
+ */
+chassis_cmd_t *AppTasks_GetOffboardCommand(void)
+{
+    return &s_offboard_cmd;
+}
+
+/**
+ * @brief 获取电机状态
+ */
+void AppTasks_GetMotorState(motor_state_t *state)
+{
+    int16_t ia = 0;
+    int16_t ib = 0;
+
+    if (state != NULL)
+    {
+        CANTask_GetCurrent(&ia, &ib);
+        memset(state, 0, sizeof(*state));
+        state->current_a = ia;
+        state->current_b = ib;
+        state->brake_active = (s_system_state.mode == MODE_BRAKE_PROTECT) ? 1U : 0U;
+    }
+}
+
+/**
+ * @brief 触发急停
+ */
+void AppTasks_TriggerEStop(void)
+{
+    s_system_state.mode = MODE_BRAKE_PROTECT;
+    s_system_state.last_update_tick = HAL_GetTick();
+    SafetyTask_TriggerEStop();
+}
+
+/**
+ * @brief 设置故障位
+ */
+void AppTasks_SetFault(uint32_t fault_bit)
+{
+    s_system_state.fault_bits |= fault_bit;
+    s_system_state.last_update_tick = HAL_GetTick();
+}
+
+/**
+ * @brief 清除故障位
+ */
+void AppTasks_ClearFault(uint32_t fault_bit)
+{
+    s_system_state.fault_bits &= ~fault_bit;
+    s_system_state.last_update_tick = HAL_GetTick();
 }

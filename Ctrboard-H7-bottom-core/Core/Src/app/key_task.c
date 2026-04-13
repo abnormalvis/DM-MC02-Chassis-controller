@@ -1,6 +1,6 @@
 #include "key_task.h"
-
 #include "main.h"
+#include "gpio.h"
 
 #define KEY_DEBOUNCE_MS    ((uint32_t)20U)
 #define KEY_LONG_PRESS_MS  ((uint32_t)1000U)
@@ -32,7 +32,7 @@ void KeyTask_Init(void)
   s_key_ctx.pending_event = KEY_EVENT_NONE;
 }
 
-void KeyTask_Process(void)
+void KeyTask_Process(void *argument)
 {
   uint32_t now = HAL_GetTick();
   uint8_t raw = key_read_raw();
