@@ -56,6 +56,9 @@ bool proto_adapter_legacy_rpm_to_chassis(const msg_cmd_set_wheel_rpm_t *rpm_cmd,
   out_cmd->wz_rps = (right_rpm - left_rpm) * g_cfg.rpm_to_wz_scale;
   out_cmd->mode = (uint8_t)CTRL_MODE_OFFBOARD;
   out_cmd->estop = 0U;
+  out_cmd->estop_cmd = (uint8_t)CTRL_SW_CMD_HOLD;
+  out_cmd->brake_cmd = (uint8_t)CTRL_SW_CMD_HOLD;
+  out_cmd->throttle_lock_cmd = (uint8_t)CTRL_SW_CMD_HOLD;
   out_cmd->source = (uint8_t)OFFBOARD_SRC_RS485;
   out_cmd->ts_ms = ts_ms;
   out_cmd->valid = 1U;
@@ -75,6 +78,10 @@ bool proto_adapter_on_unified_frame(const proto_v0_frame_view_t *frame,
   }
 
   out_cmd->valid = 0U;
+  out_cmd->estop = 0U;
+  out_cmd->estop_cmd = (uint8_t)CTRL_SW_CMD_HOLD;
+  out_cmd->brake_cmd = (uint8_t)CTRL_SW_CMD_HOLD;
+  out_cmd->throttle_lock_cmd = (uint8_t)CTRL_SW_CMD_HOLD;
 
   switch (frame->hdr.msg_id)
   {
@@ -101,12 +108,18 @@ bool proto_adapter_on_unified_frame(const proto_v0_frame_view_t *frame,
       out_cmd->mode = (uint8_t)CTRL_MODE_OFFBOARD;
       out_cmd->source = (uint8_t)OFFBOARD_SRC_USB;
       out_cmd->estop = 0U;
+      out_cmd->estop_cmd = (uint8_t)CTRL_SW_CMD_HOLD;
+      out_cmd->brake_cmd = (uint8_t)CTRL_SW_CMD_HOLD;
+      out_cmd->throttle_lock_cmd = (uint8_t)CTRL_SW_CMD_HOLD;
       out_cmd->ts_ms = frame->hdr.ts_ms;
       out_cmd->valid = 1U;
       return true;
 
     case MSG_CMD_ESTOP:
       out_cmd->estop = 1U;
+      out_cmd->estop_cmd = (uint8_t)CTRL_SW_CMD_ENABLE;
+      out_cmd->brake_cmd = (uint8_t)CTRL_SW_CMD_HOLD;
+      out_cmd->throttle_lock_cmd = (uint8_t)CTRL_SW_CMD_HOLD;
       out_cmd->mode = (uint8_t)CTRL_MODE_OFFBOARD;
       out_cmd->source = (uint8_t)OFFBOARD_SRC_USB;
       out_cmd->ts_ms = frame->hdr.ts_ms;

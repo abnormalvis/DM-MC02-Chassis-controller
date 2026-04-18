@@ -14,6 +14,7 @@ extern FDCAN_HandleTypeDef hfdcan3;
 /* 接收缓冲区 */
 static current_data_t g_current_data;
 static uint8_t g_data_ready = 0;
+static uint8_t g_drive_seq = 0U;
 
 /* 回调函数指针 */
 static void (*g_callback)(const current_data_t *data) = NULL;
@@ -67,6 +68,45 @@ void can_send_control_cmd(uint8_t cmd, uint8_t param)
 
     txData[0] = cmd;
     txData[1] = param;
+
+    if (HAL_FDCAN_AddMessageToTxFifoQ(&hfdcan3, &TxHeader, txData) != HAL_OK)
+    {
+        Error_Handler();
+    }
+}
+
+void can_send_drive_cmd(const drive_cmd_t *cmd)
+{
+    FDCAN_TxHeaderTypeDef TxHeader;
+    uint8_t txData[CAN_DLC_DRIVE_CMD] = {0};
+    drive_cmd_t local;
+
+    if (cmd == NULL)
+    {
+        return;
+    }
+
+    local = *cmd;
+    local.seq = g_drive_seq++;
+
+    TxHeader.Identifier = CAN_ID_DRIVE_CMD;
+    TxHeader.IdType = FDCAN_STANDARD_ID;
+    TxHeader.TxFrameType = FDCAN_DATA_FRAME;
+    TxHeader.DataLength = FDCAN_DLC_BYTES_8;
+    TxHeader.ErrorStateIndicator = FDCAN_ESI_ACTIVE;
+    TxHeader.BitRateSwitch = FDCAN_BRS_OFF;
+    TxHeader.FDFormat = FDCAN_CLASSIC_CAN;
+    TxHeader.TxEventFifoControl = FDCAN_NO_TX_EVENTS;
+    TxHeader.MessageMarker = 0;
+
+    txData[0] = (uint8_t)(local.left_cmd & 0xFF);
+    txData[1] = (uint8_t)((local.left_cmd >> 8) & 0xFF);
+    txData[2] = (uint8_t)(local.right_cmd & 0xFF);
+    txData[3] = (uint8_t)((local.right_cmd >> 8) & 0xFF);
+    txData[4] = local.flags;
+    txData[5] = local.seq;
+    txData[6] = (uint8_t)(local.reserved & 0xFF);
+    txData[7] = (uint8_t)((local.reserved >> 8) & 0xFF);
 
     if (HAL_FDCAN_AddMessageToTxFifoQ(&hfdcan3, &TxHeader, txData) != HAL_OK)
     {

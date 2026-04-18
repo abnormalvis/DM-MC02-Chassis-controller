@@ -1,3 +1,23 @@
 build
 mx.scratch
 !.settings
+
+# Keil generated build outputs
+MDK-ARM/.vscode/
+MDK-ARM/DebugConfig/
+MDK-ARM/DM-MC02/
+MDK-ARM/RTE/
+MDK-ARM/*.lst
+MDK-ARM/*.uvguix.*
+MDK-ARM/DM-MC02/*.axf
+MDK-ARM/DM-MC02/*.map
+MDK-ARM/DM-MC02/*.htm
+MDK-ARM/DM-MC02/*.lnp
+MDK-ARM/DM-MC02/*.sct
+MDK-ARM/DM-MC02/*.dep
+MDK-ARM/DM-MC02/*.crf
+MDK-ARM/DM-MC02/*.d
+
+# Debug logs
+gdbClient_log.txt
+stlinkgdbserver_log.txt

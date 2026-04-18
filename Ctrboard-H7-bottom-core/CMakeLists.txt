@@ -3,19 +3,19 @@ cmake_minimum_required(VERSION 3.22)
 # Project name
 project(Ctrboard-H7-bottom-core C ASM)
 
-# Toolchain for STM32
-set(CMAKE_SYSTEM_NAME Generic)
-set(CMAKE_SYSTEM_PROCESSOR ARM)
+# Toolchain should come from CMake preset/toolchain file.
+# Fallback to PATH lookup for binary utilities when needed.
+if(NOT CMAKE_TOOLCHAIN_FILE)
+    message(STATUS "CMAKE_TOOLCHAIN_FILE is not set; using PATH for arm-none-eabi tool lookup")
+endif()
 
-# Embedded toolchain (must be set before any try_compile)
-set(TOOLCHAIN_PREFIX "/opt/gcc-arm-none-eabi-9-2020-q2-update/bin/arm-none-eabi")
-set(CMAKE_C_COMPILER ${TOOLCHAIN_PREFIX}-gcc)
-set(CMAKE_CXX_COMPILER ${TOOLCHAIN_PREFIX}-g++)
-set(CMAKE_ASM_COMPILER ${TOOLCHAIN_PREFIX}-gcc)
-set(CMAKE_AR ${TOOLCHAIN_PREFIX}-ar)
-set(CMAKE_RANLIB ${TOOLCHAIN_PREFIX}-ranlib)
-set(CMAKE_OBJCOPY ${TOOLCHAIN_PREFIX}-objcopy)
-set(CMAKE_SIZE ${TOOLCHAIN_PREFIX}-size)
+if(NOT CMAKE_OBJCOPY)
+    find_program(CMAKE_OBJCOPY NAMES arm-none-eabi-objcopy REQUIRED)
+endif()
+
+if(NOT CMAKE_SIZE)
+    find_program(CMAKE_SIZE NAMES arm-none-eabi-size REQUIRED)
+endif()
 
 # C standard
 set(CMAKE_C_STANDARD 11)

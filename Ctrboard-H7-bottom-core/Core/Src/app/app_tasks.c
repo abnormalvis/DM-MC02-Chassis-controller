@@ -20,6 +20,7 @@
 #include "imu_task.h"
 #include "safety_task.h"
 #include "protocol_adapter.h"
+#include <math.h>
 
 /* 任务句柄定义 */
 static osThreadId_t s_motor_task_handle;
@@ -52,6 +53,13 @@ __NO_RETURN static void BuzzerTaskWrapper(void *argument);
 #define APP_VX_GAIN_RPM_PER_MPS   400.0f
 #define APP_WZ_GAIN_RPM_PER_RPS   100.0f
 #define APP_RPM_LIMIT             900
+#define APP_ESTOP_CLEAR_VX_TH     0.10f
+#define APP_THROTTLE_LOCK_VX_MPS  0.55f
+
+static uint8_t s_estop_latched;
+static uint8_t s_brake_latched;
+static uint8_t s_throttle_lock_latched;
+static uint8_t s_estop_need_center;
 
 static int16_t app_clamp_rpm(float rpm)
 {
@@ -84,27 +92,96 @@ void comm_dispatcher_on_ctrl_cmd(const void *cmd)
     const chassis_ctrl_cmd_t *ctrl_cmd = (const chassis_ctrl_cmd_t *)cmd;
     int16_t rpm_left;
     int16_t rpm_right;
+    uint8_t drive_flags = 0U;
     control_mode_t mode;
+    chassis_ctrl_cmd_t effective_cmd;
 
     if ((ctrl_cmd == NULL) || (ctrl_cmd->valid == 0U))
     {
         return;
     }
 
-    if (ctrl_cmd->estop != 0U)
+    effective_cmd = *ctrl_cmd;
+
+    if ((effective_cmd.estop != 0U) || (effective_cmd.estop_cmd == (uint8_t)CTRL_SW_CMD_ENABLE))
     {
+        s_estop_latched = 1U;
+        s_estop_need_center = 1U;
+    }
+    else if (effective_cmd.estop_cmd == (uint8_t)CTRL_SW_CMD_DISABLE)
+    {
+        if ((s_estop_need_center == 0U) || (fabsf(effective_cmd.vx_mps) <= APP_ESTOP_CLEAR_VX_TH))
+        {
+            s_estop_latched = 0U;
+            s_estop_need_center = 0U;
+            SafetyTask_ClearEStop();
+        }
+    }
+
+    if ((s_estop_need_center != 0U) && (fabsf(effective_cmd.vx_mps) <= APP_ESTOP_CLEAR_VX_TH))
+    {
+        s_estop_need_center = 0U;
+    }
+
+    if (effective_cmd.brake_cmd == (uint8_t)CTRL_SW_CMD_ENABLE)
+    {
+        s_brake_latched = 1U;
+    }
+    else if (effective_cmd.brake_cmd == (uint8_t)CTRL_SW_CMD_DISABLE)
+    {
+        s_brake_latched = 0U;
+    }
+
+    if (effective_cmd.throttle_lock_cmd == (uint8_t)CTRL_SW_CMD_ENABLE)
+    {
+        s_throttle_lock_latched = 1U;
+    }
+    else if (effective_cmd.throttle_lock_cmd == (uint8_t)CTRL_SW_CMD_DISABLE)
+    {
+        s_throttle_lock_latched = 0U;
+    }
+
+    if (s_estop_latched != 0U)
+    {
+        drive_flags |= CAN_DRIVE_FLAG_ESTOP;
+        drive_flags |= CAN_DRIVE_FLAG_BRAKE;
+        MotorControlTask_SetControlFlags(drive_flags);
         AppTasks_TriggerEStop();
+        MotorControlTask_Brake();
         return;
     }
 
+    if (s_brake_latched != 0U)
+    {
+        drive_flags |= CAN_DRIVE_FLAG_BRAKE;
+        if ((effective_cmd.source == (uint8_t)OFFBOARD_SRC_NONE))
+        {
+            drive_flags |= CAN_DRIVE_FLAG_SOURCE_RC;
+        }
+        MotorControlTask_SetControlFlags(drive_flags);
+        s_system_state.mode = MODE_BRAKE_PROTECT;
+        s_system_state.last_update_tick = HAL_GetTick();
+        MotorControlTask_Brake();
+        return;
+    }
+
+    MotorControlTask_ReleaseBrake();
+
+    if ((s_throttle_lock_latched != 0U) && (effective_cmd.source == (uint8_t)OFFBOARD_SRC_NONE))
+    {
+        drive_flags |= CAN_DRIVE_FLAG_THROTTLE_LOCK;
+        effective_cmd.vx_mps = APP_THROTTLE_LOCK_VX_MPS;
+    }
+
     mode = MODE_IDLE;
-    if (ctrl_cmd->mode == (uint8_t)CTRL_MODE_RC)
+    if (effective_cmd.mode == (uint8_t)CTRL_MODE_RC)
     {
         mode = MODE_RC;
     }
-    else if (ctrl_cmd->mode == (uint8_t)CTRL_MODE_OFFBOARD)
+    else if (effective_cmd.mode == (uint8_t)CTRL_MODE_OFFBOARD)
     {
         mode = MODE_OFFBOARD;
+        drive_flags |= CAN_DRIVE_FLAG_MODE_OFFBOARD;
     }
 
     s_system_state.mode = mode;
@@ -112,37 +189,40 @@ void comm_dispatcher_on_ctrl_cmd(const void *cmd)
     s_system_state.usb_connected = 0U;
     s_system_state.rs485_connected = 0U;
 
-    if (ctrl_cmd->source == (uint8_t)OFFBOARD_SRC_USB)
+    if (effective_cmd.source == (uint8_t)OFFBOARD_SRC_USB)
     {
         s_system_state.usb_connected = 1U;
     }
-    else if (ctrl_cmd->source == (uint8_t)OFFBOARD_SRC_RS485)
+    else if (effective_cmd.source == (uint8_t)OFFBOARD_SRC_RS485)
     {
         s_system_state.rs485_connected = 1U;
     }
     else
     {
         s_system_state.rc_connected = 1U;
+        drive_flags |= CAN_DRIVE_FLAG_SOURCE_RC;
     }
+
+    MotorControlTask_SetControlFlags(drive_flags);
 
     if (mode == MODE_RC)
     {
-        s_rc_cmd.vx_mps = ctrl_cmd->vx_mps;
-        s_rc_cmd.wz_rps = ctrl_cmd->wz_rps;
-        s_rc_cmd.estop = ctrl_cmd->estop;
-        s_rc_cmd.valid = ctrl_cmd->valid;
-        s_rc_cmd.timestamp = ctrl_cmd->ts_ms;
+        s_rc_cmd.vx_mps = effective_cmd.vx_mps;
+        s_rc_cmd.wz_rps = effective_cmd.wz_rps;
+        s_rc_cmd.estop = effective_cmd.estop;
+        s_rc_cmd.valid = effective_cmd.valid;
+        s_rc_cmd.timestamp = effective_cmd.ts_ms;
     }
     else
     {
-        s_offboard_cmd.vx_mps = ctrl_cmd->vx_mps;
-        s_offboard_cmd.wz_rps = ctrl_cmd->wz_rps;
-        s_offboard_cmd.estop = ctrl_cmd->estop;
-        s_offboard_cmd.valid = ctrl_cmd->valid;
-        s_offboard_cmd.timestamp = ctrl_cmd->ts_ms;
+        s_offboard_cmd.vx_mps = effective_cmd.vx_mps;
+        s_offboard_cmd.wz_rps = effective_cmd.wz_rps;
+        s_offboard_cmd.estop = effective_cmd.estop;
+        s_offboard_cmd.valid = effective_cmd.valid;
+        s_offboard_cmd.timestamp = effective_cmd.ts_ms;
     }
 
-    app_chassis_cmd_to_rpm(ctrl_cmd, &rpm_left, &rpm_right);
+    app_chassis_cmd_to_rpm(&effective_cmd, &rpm_left, &rpm_right);
     MotorControlTask_SetTarget(rpm_left, rpm_right);
     s_system_state.last_update_tick = HAL_GetTick();
 }
@@ -193,12 +273,12 @@ void AppTasks_Create(void)
     CANTask_Init();
 
     /* 创建 USB 通信任务 (100Hz) */
-    static const osThreadAttr_t usb_attr = {
-        .name = "USBTask",
-        .stack_size = STACK_SIZE_USB * 4,
-        .priority = (osPriority_t)PRIORITY_USB + 1
-    };
-    s_usb_task_handle = osThreadNew(USBTaskWrapper, NULL, &usb_attr);
+    // static const osThreadAttr_t usb_attr = {
+    //     .name = "USBTask",
+    //     .stack_size = STACK_SIZE_USB * 4,
+    //     .priority = (osPriority_t)PRIORITY_USB + 1
+    // };
+    // s_usb_task_handle = osThreadNew(USBTaskWrapper, NULL, &usb_attr);
 
     /* 创建 RS485 通信任务 (100Hz) */
     static const osThreadAttr_t rs485_attr = {

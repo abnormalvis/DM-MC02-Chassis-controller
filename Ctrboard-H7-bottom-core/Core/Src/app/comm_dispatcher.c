@@ -16,6 +16,44 @@
 #include "protocol_legacy_v1.h"
 #include "protocol_unified_v0.h"
 
+#define CRSF_CH_THROTTLE        0U
+#define CRSF_CH_STEERING        1U
+#define CRSF_CH_SPEED_SCALE     2U
+#define CRSF_CH_TURN_SCALE      3U
+#define CRSF_CH_MODE            4U
+#define CRSF_CH_ESTOP           5U
+#define CRSF_CH_BRAKE           6U
+#define CRSF_CH_THROTTLE_LOCK   7U
+
+#define CRSF_SWITCH_LOW_TH      700U
+#define CRSF_SWITCH_HIGH_TH     1300U
+
+static uint8_t crsf_decode_sw_cmd(uint16_t ch)
+{
+  if (ch <= CRSF_SWITCH_LOW_TH)
+  {
+    return (uint8_t)CTRL_SW_CMD_DISABLE;
+  }
+  if (ch >= CRSF_SWITCH_HIGH_TH)
+  {
+    return (uint8_t)CTRL_SW_CMD_ENABLE;
+  }
+  return (uint8_t)CTRL_SW_CMD_HOLD;
+}
+
+static float crsf_decode_scale_3pos(uint16_t ch)
+{
+  if (ch <= CRSF_SWITCH_LOW_TH)
+  {
+    return 0.40f;
+  }
+  if (ch >= CRSF_SWITCH_HIGH_TH)
+  {
+    return 1.00f;
+  }
+  return 0.70f;
+}
+
 static osMessageQueueId_t s_comm_rx_queue;
 
 __attribute__((weak)) void comm_dispatcher_on_ctrl_cmd(const void *cmd)
@@ -53,26 +91,38 @@ static void dispatch_crsf(const comm_rx_item_t *item)
   chassis_ctrl_cmd_t cmd;
   float throttle;
   float steering;
+  float speed_scale;
+  float turn_scale;
 
   if (!crsf_try_decode_rc_channels(item->data, item->len, &rc))
   {
     return;
   }
 
-  throttle = crsf_channel_to_norm(rc.ch[0]);
-  steering = crsf_channel_to_norm(rc.ch[1]);
+  throttle = crsf_channel_to_norm(rc.ch[CRSF_CH_THROTTLE]);
+  steering = crsf_channel_to_norm(rc.ch[CRSF_CH_STEERING]);
+  speed_scale = crsf_decode_scale_3pos(rc.ch[CRSF_CH_SPEED_SCALE]);
+  turn_scale = crsf_decode_scale_3pos(rc.ch[CRSF_CH_TURN_SCALE]);
 
   memset(&cmd, 0, sizeof(cmd));
-  cmd.vx_mps = throttle;
-  cmd.wz_rps = steering;
+  cmd.vx_mps = throttle * speed_scale;
+  cmd.wz_rps = steering * turn_scale;
   cmd.mode = (uint8_t)CTRL_MODE_RC;
-  cmd.estop = (rc.ch[5] > CRSF_CH_VALUE_MID) ? 1U : 0U;
+  cmd.estop = 0U;
+  cmd.estop_cmd = crsf_decode_sw_cmd(rc.ch[CRSF_CH_ESTOP]);
+  cmd.brake_cmd = crsf_decode_sw_cmd(rc.ch[CRSF_CH_BRAKE]);
+  cmd.throttle_lock_cmd = crsf_decode_sw_cmd(rc.ch[CRSF_CH_THROTTLE_LOCK]);
   cmd.source = (uint8_t)OFFBOARD_SRC_NONE;
   cmd.valid = 1U;
+  cmd.ts_ms = osKernelGetTickCount();
 
-  if (rc.ch[4] > CRSF_CH_VALUE_MID)
+  if (rc.ch[CRSF_CH_MODE] <= CRSF_SWITCH_LOW_TH)
   {
-    /* CH5 high can be interpreted as offboard request in upper state machine. */
+    cmd.mode = (uint8_t)CTRL_MODE_IDLE;
+  }
+  else if (rc.ch[CRSF_CH_MODE] >= CRSF_SWITCH_HIGH_TH)
+  {
+    /* CH5 high requests OFFBOARD mode. */
     cmd.mode = (uint8_t)CTRL_MODE_OFFBOARD;
   }
 

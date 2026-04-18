@@ -1,7 +1,7 @@
 /**
  * @file motor_control_task.h
  * @brief 电机控制任务
- * @description 双电机 PWM 输出、速度控制、电流环内环
+ * @description 双电机目标控制与 CAN 下发
  */
 
 #ifndef MOTOR_CONTROL_TASK_H
@@ -71,6 +71,16 @@ void MotorControlTask_Brake(void);
  * @brief 释放刹车
  */
 void MotorControlTask_ReleaseBrake(void);
+
+/**
+ * @brief 设置控制标志位 (CAN_DRIVE_FLAG_xxx)
+ */
+void MotorControlTask_SetControlFlags(uint8_t flags);
+
+/**
+ * @brief 获取控制标志位
+ */
+uint8_t MotorControlTask_GetControlFlags(void);
 
 /**
  * @brief 设置 PWM 上限

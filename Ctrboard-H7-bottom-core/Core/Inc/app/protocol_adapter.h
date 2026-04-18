@@ -26,6 +26,13 @@ extern "C" {
 #include "protocol_legacy_v1.h"
 #include "protocol_unified_v0.h"
 
+typedef enum
+{
+  CTRL_SW_CMD_HOLD = 0,
+  CTRL_SW_CMD_ENABLE = 1,
+  CTRL_SW_CMD_DISABLE = 2
+} ctrl_sw_cmd_t;
+
 /* Internal control command used by H723 execution layer */
 typedef struct
 {
@@ -33,6 +40,9 @@ typedef struct
   float wz_rps;
   uint8_t mode;       /* ctrl_mode_t */
   uint8_t estop;
+  uint8_t estop_cmd;        /* ctrl_sw_cmd_t */
+  uint8_t brake_cmd;        /* ctrl_sw_cmd_t */
+  uint8_t throttle_lock_cmd;/* ctrl_sw_cmd_t */
   uint8_t source;     /* offboard_src_t */
   uint32_t ts_ms;
   uint8_t valid;
