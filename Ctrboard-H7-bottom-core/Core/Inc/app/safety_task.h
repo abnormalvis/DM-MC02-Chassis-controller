@@ -14,7 +14,7 @@
 /* 故障位定义 */
 #define FAULT_RC_TIMEOUT         (1 << 0)    /* RC 超时 */
 #define FAULT_OFFBOARD_TIMEOUT  (1 << 1)    /* 上位机超时 */
-#define FAULT_CAN_TIMEOUT      (1 << 2)    /* CAN 超时 */
+#define FAULT_CAN_TIMEOUT      (0U)         /* 单芯片方案中已停用 */
 #define FAULT_MODE_CONFLICT    (1 << 3)    /* 模式冲突 */
 #define FAULT_OVERCURRENT_A    (1 << 4)    /* 电机A过流 */
 #define FAULT_OVERCURRENT_B    (1 << 5)    /* 电机B过流 */
@@ -24,7 +24,7 @@
 /* 超时时间定义 (ms) */
 #define TIMEOUT_RC              100
 #define TIMEOUT_OFFBOARD        100
-#define TIMEOUT_CAN             100
+#define TIMEOUT_CAN             0
 #define TIMEOUT_RECOVERY        500     /* 故障恢复稳定时间 */
 
 /**

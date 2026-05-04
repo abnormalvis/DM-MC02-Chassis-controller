@@ -9,8 +9,8 @@
 #include "cmsis_os2.h"
 #include <string.h>
 #include "main.h"
+#include "adc.h"
 #include "comm_dispatcher.h"
-#include "can_task.h"
 #include "motor_control_task.h"
 #include "led_task.h"
 #include "buzzer_task.h"
@@ -20,12 +20,12 @@
 #include "imu_task.h"
 #include "safety_task.h"
 #include "protocol_adapter.h"
+#include "vofa_debug.h"
 #include <math.h>
 
 /* 任务句柄定义 */
 static osThreadId_t s_motor_task_handle;
 static osThreadId_t s_crsf_task_handle;
-static osThreadId_t s_can_task_handle;
 static osThreadId_t s_usb_task_handle;
 static osThreadId_t s_rs485_task_handle;
 static osThreadId_t s_imu_task_handle;
@@ -42,7 +42,6 @@ static chassis_cmd_t s_offboard_cmd;
 /* 任务函数原型 */
 __NO_RETURN static void MotorControlTask(void *argument);
 __NO_RETURN static void CRSFTask(void *argument);
-__NO_RETURN static void CANTaskWrapper(void *argument);
 __NO_RETURN static void USBTaskWrapper(void *argument);
 __NO_RETURN static void RS485TaskWrapper(void *argument);
 __NO_RETURN static void IMUTaskWrapper(void *argument);
@@ -55,6 +54,12 @@ __NO_RETURN static void BuzzerTaskWrapper(void *argument);
 #define APP_RPM_LIMIT             900
 #define APP_ESTOP_CLEAR_VX_TH     0.10f
 #define APP_THROTTLE_LOCK_VX_MPS  0.55f
+
+#define APP_CTRL_FLAG_ESTOP          (1U << 0)
+#define APP_CTRL_FLAG_BRAKE          (1U << 1)
+#define APP_CTRL_FLAG_THROTTLE_LOCK  (1U << 2)
+#define APP_CTRL_FLAG_MODE_OFFBOARD  (1U << 3)
+#define APP_CTRL_FLAG_SOURCE_RC      (1U << 4)
 
 static uint8_t s_estop_latched;
 static uint8_t s_brake_latched;
@@ -143,8 +148,8 @@ void comm_dispatcher_on_ctrl_cmd(const void *cmd)
 
     if (s_estop_latched != 0U)
     {
-        drive_flags |= CAN_DRIVE_FLAG_ESTOP;
-        drive_flags |= CAN_DRIVE_FLAG_BRAKE;
+        drive_flags |= APP_CTRL_FLAG_ESTOP;
+        drive_flags |= APP_CTRL_FLAG_BRAKE;
         MotorControlTask_SetControlFlags(drive_flags);
         AppTasks_TriggerEStop();
         MotorControlTask_Brake();
@@ -153,10 +158,10 @@ void comm_dispatcher_on_ctrl_cmd(const void *cmd)
 
     if (s_brake_latched != 0U)
     {
-        drive_flags |= CAN_DRIVE_FLAG_BRAKE;
+        drive_flags |= APP_CTRL_FLAG_BRAKE;
         if ((effective_cmd.source == (uint8_t)OFFBOARD_SRC_NONE))
         {
-            drive_flags |= CAN_DRIVE_FLAG_SOURCE_RC;
+            drive_flags |= APP_CTRL_FLAG_SOURCE_RC;
         }
         MotorControlTask_SetControlFlags(drive_flags);
         s_system_state.mode = MODE_BRAKE_PROTECT;
@@ -169,7 +174,7 @@ void comm_dispatcher_on_ctrl_cmd(const void *cmd)
 
     if ((s_throttle_lock_latched != 0U) && (effective_cmd.source == (uint8_t)OFFBOARD_SRC_NONE))
     {
-        drive_flags |= CAN_DRIVE_FLAG_THROTTLE_LOCK;
+        drive_flags |= APP_CTRL_FLAG_THROTTLE_LOCK;
         effective_cmd.vx_mps = APP_THROTTLE_LOCK_VX_MPS;
     }
 
@@ -181,7 +186,7 @@ void comm_dispatcher_on_ctrl_cmd(const void *cmd)
     else if (effective_cmd.mode == (uint8_t)CTRL_MODE_OFFBOARD)
     {
         mode = MODE_OFFBOARD;
-        drive_flags |= CAN_DRIVE_FLAG_MODE_OFFBOARD;
+        drive_flags |= APP_CTRL_FLAG_MODE_OFFBOARD;
     }
 
     s_system_state.mode = mode;
@@ -200,7 +205,7 @@ void comm_dispatcher_on_ctrl_cmd(const void *cmd)
     else
     {
         s_system_state.rc_connected = 1U;
-        drive_flags |= CAN_DRIVE_FLAG_SOURCE_RC;
+        drive_flags |= APP_CTRL_FLAG_SOURCE_RC;
     }
 
     MotorControlTask_SetControlFlags(drive_flags);
@@ -263,15 +268,6 @@ void AppTasks_Create(void)
     };
     s_crsf_task_handle = osThreadNew(CRSFTask, NULL, &crsf_attr);
 
-    /* 创建 CAN 通信任务 (100Hz) */
-    static const osThreadAttr_t can_attr = {
-        .name = "CANTask",
-        .stack_size = STACK_SIZE_CAN * 4,
-        .priority = (osPriority_t)PRIORITY_CAN + 1
-    };
-    s_can_task_handle = osThreadNew(CANTaskWrapper, NULL, &can_attr);
-    CANTask_Init();
-
     /* 创建 USB 通信任务 (100Hz) */
     // static const osThreadAttr_t usb_attr = {
     //     .name = "USBTask",
@@ -332,6 +328,7 @@ __NO_RETURN static void MotorControlTask(void *argument)
     for (;;)
     {
         MotorControlTask_Process(NULL);
+        VofaDebug_Process();
         osDelay(PERIOD_MOTOR_CONTROL);
     }
 }
@@ -348,20 +345,6 @@ __NO_RETURN static void CRSFTask(void *argument)
     {
         CRSFTask_Process(NULL);
         osDelay(PERIOD_CRSF);
-    }
-}
-
-/**
- * @brief CAN 任务包装器
- */
-__NO_RETURN static void CANTaskWrapper(void *argument)
-{
-    (void)argument;
-
-    for (;;)
-    {
-        CANTask_Process(NULL);
-        osDelay(PERIOD_CAN);
     }
 }
 
@@ -496,15 +479,14 @@ chassis_cmd_t *AppTasks_GetOffboardCommand(void)
  */
 void AppTasks_GetMotorState(motor_state_t *state)
 {
-    int16_t ia = 0;
-    int16_t ib = 0;
+    const uint16_t *adc_samples;
 
     if (state != NULL)
     {
-        CANTask_GetCurrent(&ia, &ib);
         memset(state, 0, sizeof(*state));
-        state->current_a = ia;
-        state->current_b = ib;
+        adc_samples = ADC1_GetControlDmaBuffer();
+        state->current_a = (int16_t)(adc_samples[0] / 100U);
+        state->current_b = (int16_t)(adc_samples[1] / 100U);
         state->brake_active = (s_system_state.mode == MODE_BRAKE_PROTECT) ? 1U : 0U;
     }
 }

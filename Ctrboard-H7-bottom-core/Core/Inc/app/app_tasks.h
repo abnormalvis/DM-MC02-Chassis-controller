@@ -15,21 +15,19 @@
  * ============================================ */
 #define PRIORITY_MOTOR_CONTROL    1   /* 电机控制任务 - 最高 */
 #define PRIORITY_CRSF             2   /* CRSF 接收任务 */
-#define PRIORITY_CAN              3   /* CAN 通信任务 */
-#define PRIORITY_USB              4   /* USB 通信任务 */
-#define PRIORITY_RS485            5   /* RS485 通信任务 */
-#define PRIORITY_IMU              6   /* IMU 采集任务 */
-#define PRIORITY_SAFETY           7   /* 安全/故障管理任务 */
-#define PRIORITY_LED              8   /* LED 指示任务 */
-#define PRIORITY_BUZZER           9   /* 蜂鸣器任务 */
-#define PRIORITY_KEY             10   /* 按键任务 */
+#define PRIORITY_USB              3   /* USB 通信任务 */
+#define PRIORITY_RS485            4   /* RS485 通信任务 */
+#define PRIORITY_IMU              5   /* IMU 采集任务 */
+#define PRIORITY_SAFETY           6   /* 安全/故障管理任务 */
+#define PRIORITY_LED              7   /* LED 指示任务 */
+#define PRIORITY_BUZZER           8   /* 蜂鸣器任务 */
+#define PRIORITY_KEY              9   /* 按键任务 */
 
 /* ============================================
  * 任务堆栈大小定义
  * ============================================ */
 #define STACK_SIZE_MOTOR_CONTROL  512
 #define STACK_SIZE_CRSF            256
-#define STACK_SIZE_CAN             256
 #define STACK_SIZE_USB             256
 #define STACK_SIZE_RS485          256
 #define STACK_SIZE_IMU             256
@@ -43,7 +41,6 @@
  * ============================================ */
 #define PERIOD_MOTOR_CONTROL   1       /* 1kHz */
 #define PERIOD_CRSF            1       /* 1kHz 轮询 */
-#define PERIOD_CAN             10       /* 100Hz 状态检查 */
 #define PERIOD_USB             10       /* 100Hz 通信 */
 #define PERIOD_RS485           10       /* 100Hz 通信 */
 #define PERIOD_IMU             1       /* 1kHz */
@@ -79,7 +76,6 @@ typedef struct {
 typedef struct {
     control_mode_t mode;           /* 当前控制模式 */
     uint8_t rc_connected;          /* RC 连接状态 */
-    uint8_t can_connected;         /* CAN 连接状态 */
     uint8_t usb_connected;         /* USB 连接状态 */
     uint8_t rs485_connected;       /* RS485 连接状态 */
     uint32_t fault_bits;           /* 故障位 */
@@ -117,12 +113,6 @@ void MotorControlTask_Process(void *argument);
  */
 void CRSFTask_Init(void);
 void CRSFTask_Process(void *argument);
-
-/**
- * @brief CAN 通信任务
- */
-void CANTask_Init(void);
-void CANTask_Process(void *argument);
 
 /**
  * @brief USB 通信任务

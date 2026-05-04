@@ -22,6 +22,7 @@
 #include "stm32h7xx_it.h"
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+void HAL_UART_RxIdleCallback(UART_HandleTypeDef *huart);
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -55,9 +56,7 @@
 /* USER CODE END 0 */
 
 /* External variables --------------------------------------------------------*/
-extern FDCAN_HandleTypeDef hfdcan1;
-extern FDCAN_HandleTypeDef hfdcan2;
-extern FDCAN_HandleTypeDef hfdcan3;
+extern DMA_HandleTypeDef hdma_adc1;
 extern DMA_HandleTypeDef hdma_uart7_rx;
 extern DMA_HandleTypeDef hdma_usart2_rx;
 extern DMA_HandleTypeDef hdma_usart3_rx;
@@ -171,6 +170,20 @@ void DebugMon_Handler(void)
 /******************************************************************************/
 
 /**
+  * @brief This function handles DMA1 stream0 global interrupt.
+  */
+void DMA1_Stream0_IRQHandler(void)
+{
+  /* USER CODE BEGIN DMA1_Stream0_IRQn 0 */
+
+  /* USER CODE END DMA1_Stream0_IRQn 0 */
+  HAL_DMA_IRQHandler(&hdma_adc1);
+  /* USER CODE BEGIN DMA1_Stream0_IRQn 1 */
+
+  /* USER CODE END DMA1_Stream0_IRQn 1 */
+}
+
+/**
   * @brief This function handles DMA1 stream1 global interrupt.
   */
 void DMA1_Stream1_IRQHandler(void)
@@ -207,62 +220,6 @@ void DMA1_Stream3_IRQHandler(void)
   /* USER CODE BEGIN DMA1_Stream3_IRQn 1 */
 
   /* USER CODE END DMA1_Stream3_IRQn 1 */
-}
-
-/**
-  * @brief This function handles FDCAN1 interrupt 0.
-  */
-void FDCAN1_IT0_IRQHandler(void)
-{
-  /* USER CODE BEGIN FDCAN1_IT0_IRQn 0 */
-
-  /* USER CODE END FDCAN1_IT0_IRQn 0 */
-  HAL_FDCAN_IRQHandler(&hfdcan1);
-  /* USER CODE BEGIN FDCAN1_IT0_IRQn 1 */
-
-  /* USER CODE END FDCAN1_IT0_IRQn 1 */
-}
-
-/**
-  * @brief This function handles FDCAN2 interrupt 0.
-  */
-void FDCAN2_IT0_IRQHandler(void)
-{
-  /* USER CODE BEGIN FDCAN2_IT0_IRQn 0 */
-
-  /* USER CODE END FDCAN2_IT0_IRQn 0 */
-  HAL_FDCAN_IRQHandler(&hfdcan2);
-  /* USER CODE BEGIN FDCAN2_IT0_IRQn 1 */
-
-  /* USER CODE END FDCAN2_IT0_IRQn 1 */
-}
-
-/**
-  * @brief This function handles FDCAN1 interrupt 1.
-  */
-void FDCAN1_IT1_IRQHandler(void)
-{
-  /* USER CODE BEGIN FDCAN1_IT1_IRQn 0 */
-
-  /* USER CODE END FDCAN1_IT1_IRQn 0 */
-  HAL_FDCAN_IRQHandler(&hfdcan1);
-  /* USER CODE BEGIN FDCAN1_IT1_IRQn 1 */
-
-  /* USER CODE END FDCAN1_IT1_IRQn 1 */
-}
-
-/**
-  * @brief This function handles FDCAN2 interrupt 1.
-  */
-void FDCAN2_IT1_IRQHandler(void)
-{
-  /* USER CODE BEGIN FDCAN2_IT1_IRQn 0 */
-
-  /* USER CODE END FDCAN2_IT1_IRQn 0 */
-  HAL_FDCAN_IRQHandler(&hfdcan2);
-  /* USER CODE BEGIN FDCAN2_IT1_IRQn 1 */
-
-  /* USER CODE END FDCAN2_IT1_IRQn 1 */
 }
 
 /**
@@ -314,6 +271,13 @@ void UART7_IRQHandler(void)
 {
   /* USER CODE BEGIN UART7_IRQn 0 */
 
+  if ((__HAL_UART_GET_FLAG(&huart7, UART_FLAG_IDLE) != RESET) &&
+      (__HAL_UART_GET_IT_SOURCE(&huart7, UART_IT_IDLE) != RESET))
+  {
+    __HAL_UART_CLEAR_IDLEFLAG(&huart7);
+    HAL_UART_RxIdleCallback(&huart7);
+  }
+
   /* USER CODE END UART7_IRQn 0 */
   HAL_UART_IRQHandler(&huart7);
   /* USER CODE BEGIN UART7_IRQn 1 */
@@ -333,34 +297,6 @@ void USART10_IRQHandler(void)
   /* USER CODE BEGIN USART10_IRQn 1 */
 
   /* USER CODE END USART10_IRQn 1 */
-}
-
-/**
-  * @brief This function handles FDCAN3 interrupt 0.
-  */
-void FDCAN3_IT0_IRQHandler(void)
-{
-  /* USER CODE BEGIN FDCAN3_IT0_IRQn 0 */
-
-  /* USER CODE END FDCAN3_IT0_IRQn 0 */
-  HAL_FDCAN_IRQHandler(&hfdcan3);
-  /* USER CODE BEGIN FDCAN3_IT0_IRQn 1 */
-
-  /* USER CODE END FDCAN3_IT0_IRQn 1 */
-}
-
-/**
-  * @brief This function handles FDCAN3 interrupt 1.
-  */
-void FDCAN3_IT1_IRQHandler(void)
-{
-  /* USER CODE BEGIN FDCAN3_IT1_IRQn 0 */
-
-  /* USER CODE END FDCAN3_IT1_IRQn 0 */
-  HAL_FDCAN_IRQHandler(&hfdcan3);
-  /* USER CODE BEGIN FDCAN3_IT1_IRQn 1 */
-
-  /* USER CODE END FDCAN3_IT1_IRQn 1 */
 }
 
 /**

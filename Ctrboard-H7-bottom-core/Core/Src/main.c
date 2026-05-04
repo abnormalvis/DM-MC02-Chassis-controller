@@ -18,15 +18,21 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include "adc.h"
 #include "dma.h"
-#include "fdcan.h"
+#include "i2c.h"
 #include "octospi.h"
 #include "spi.h"
+#include "tim.h"
 #include "usart.h"
 #include "gpio.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include "crsf_task.h"
+#include "motor_control_task.h"
+#include "oled_debug.h"
+#include "vofa_debug.h"
 
 /* USER CODE END Includes */
 
@@ -38,8 +44,9 @@
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
 
-#define ENABLE_ADC1_INIT 0
-#define ENABLE_USB_DEVICE_INIT 1
+#define CONTROL_LOOP_HZ                10000U
+#define CRSF_PROCESS_PERIOD_MS         1U
+#define OLED_PROCESS_PERIOD_MS          100U
 
 /* USER CODE END PD */
 
@@ -51,17 +58,41 @@
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
+volatile uint32_t g_boot_stage = 0U;
+static uint32_t s_control_loop_step_cycles = 0U;
+static uint32_t s_last_control_cycle = 0U;
+static uint32_t s_last_crsf_process_tick = 0U;
+static uint32_t s_last_oled_process_tick = 0U;
 
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 /* USER CODE BEGIN PFP */
+static void AppScheduler_Init(void);
 
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+
+static void AppScheduler_Init(void)
+{
+  /* Enable DWT cycle counter for 100us-level bare-metal scheduling. */
+  CoreDebug->DEMCR |= CoreDebug_DEMCR_TRCENA_Msk;
+  DWT->CTRL |= DWT_CTRL_CYCCNTENA_Msk;
+  DWT->CYCCNT = 0U;
+
+  s_control_loop_step_cycles = SystemCoreClock / CONTROL_LOOP_HZ;
+  if (s_control_loop_step_cycles == 0U)
+  {
+    s_control_loop_step_cycles = 1U;
+  }
+
+  s_last_control_cycle = DWT->CYCCNT;
+  s_last_crsf_process_tick = HAL_GetTick();
+  s_last_oled_process_tick = HAL_GetTick();
+}
 
 /* USER CODE END 0 */
 
@@ -102,11 +133,25 @@ int main(void)
   MX_USART3_UART_Init();
   MX_UART7_Init();
   MX_USART10_UART_Init();
-  MX_FDCAN1_Init();
-  MX_FDCAN2_Init();
-  MX_FDCAN3_Init();
   MX_OCTOSPI2_Init();
+  MX_ADC1_Init();
+  MX_I2C1_Init();
+  MX_TIM1_Init();
+  MX_TIM2_Init();
   /* USER CODE BEGIN 2 */
+
+  AppScheduler_Init();
+
+  g_boot_stage = 20U;
+  CRSFTask_Init();
+  g_boot_stage = 21U;
+  MotorControlTask_Init();
+  g_boot_stage = 22U;
+  VofaDebug_Init();
+  g_boot_stage = 23U;
+  OledDebug_Init();
+
+  g_boot_stage = 24U;
 
   /* USER CODE END 2 */
 
@@ -117,6 +162,26 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
+    uint32_t now_cycle = DWT->CYCCNT;
+    if ((uint32_t)(now_cycle - s_last_control_cycle) >= s_control_loop_step_cycles)
+    {
+      s_last_control_cycle += s_control_loop_step_cycles;
+      MotorControlTask_Process(NULL);
+    }
+
+    if ((HAL_GetTick() - s_last_crsf_process_tick) >= CRSF_PROCESS_PERIOD_MS)
+    {
+      s_last_crsf_process_tick = HAL_GetTick();
+      CRSFTask_Process(NULL);
+    }
+
+    if ((HAL_GetTick() - s_last_oled_process_tick) >= OLED_PROCESS_PERIOD_MS)
+    {
+      s_last_oled_process_tick = HAL_GetTick();
+      OledDebug_Process();
+    }
+
+    VofaDebug_Process();
   }
   /* USER CODE END 3 */
 }

@@ -1,0 +1,102 @@
+T6BF4 000:015.508   SEGGER J-Link V8.10e Log File
+T6BF4 000:015.724   DLL Compiled: Oct 30 2024 17:37:00
+T6BF4 000:015.733   Logging started @ 2026-04-28 10:35
+T6BF4 000:015.740   Process: D:\Keil_v5\UV4\UV4.exe
+T6BF4 000:015.752 - 15.747ms
+T6BF4 000:015.768 JLINK_SetWarnOutHandler(...)
+T6BF4 000:015.776 - 0.010ms
+T6BF4 000:015.810 JLINK_OpenEx(...)
+T6BF4 000:022.601   Firmware: J-Link ARM-OB STM32 compiled Aug 22 2012 19:52:04
+T6BF4 000:024.375   Firmware: J-Link ARM-OB STM32 compiled Aug 22 2012 19:52:04
+T6BF4 000:027.327   Hardware: V7.00
+T6BF4 000:027.359   S/N: 20090928
+T6BF4 000:027.370   OEM: SEGGER
+T6BF4 000:027.380   Feature(s): FlashBP
+T6BF4 000:028.048   Bootloader: (FW returned invalid version)
+T6BF4 000:029.432   TELNET listener socket opened on port 19021
+T6BF4 000:029.873   WEBSRV WEBSRV_Init(): Starting webserver thread(s)
+T6BF4 000:030.236   WEBSRV Webserver running on local port 19080
+T6BF4 000:030.673   Looking for J-Link GUI Server exe at: D:\Keil_v5\ARM\Segger\JLinkGUIServer.exe
+T6BF4 000:031.045   Looking for J-Link GUI Server exe at: C:\Program Files\SEGGER\JLink_V810e\JLinkGUIServer.exe
+T6BF4 000:031.139   Forking J-Link GUI Server: C:\Program Files\SEGGER\JLink_V810e\JLinkGUIServer.exe
+T6BF4 000:107.937   J-Link GUI Server info: "J-Link GUI server V8.10e "
+T6BF4 000:119.502 - 103.685ms returns "O.K."
+T6BF4 000:119.556 JLINK_GetEmuCaps()
+T6BF4 000:119.569 - 0.009ms returns 0x88EA5833
+T6BF4 000:119.581 JLINK_TIF_GetAvailable(...)
+T6BF4 000:120.085 - 0.503ms
+T6BF4 000:120.121 JLINK_SetErrorOutHandler(...)
+T6BF4 000:120.127 - 0.006ms
+T6BF4 000:120.162 JLINK_ExecCommand("ProjectFile = "F:\stm32_ws\projects\DM-MC02-Chassis-controller\0.cubeMX配置参考\0.cubeMX配置参考\MDK-ARM\JLinkSettings.ini"", ...). 
+T6BF4 000:145.008   Ref file found at: D:\Keil_v5\ARM\Segger\JLinkDevices.ref
+T6BF4 000:145.319   REF file references invalid XML file: C:\Program Files\SEGGER\JLink_V810e\JLinkDevices.xml
+T6BF4 000:147.584 - 27.423ms returns 0x00
+T6BF4 000:151.356 JLINK_ExecCommand("Device = STM32H750VBTx", ...). 
+T6BF4 000:153.225   Flash bank @ 0x08000000: SFL: Parsing sectorization info from ELF file
+T6BF4 000:153.266     FlashDevice.SectorInfo[0]: .SectorSize = 0x00020000, .SectorStartAddr = 0x00000000
+T6BF4 000:153.278   FlashBank @0x08000000: Sectorization info from SFL ELF file ignored because sectorization override from DLL / XML file is active.
+T6BF4 000:153.409   Flash bank @ 0x90000000: SFL: Parsing sectorization info from ELF file
+T6BF4 000:153.514     FlashDevice.SectorInfo[0]: .SectorSize = 0x00010000, .SectorStartAddr = 0x00000000
+T6BF4 000:183.025   Device "STM32H750VB" selected.
+T6BF4 000:183.895 - 32.498ms returns 0x00
+T6BF4 000:183.982 JLINK_ExecCommand("DisableConnectionTimeout", ...). 
+T6BF4 000:184.009   ERROR: Unknown command
+T6BF4 000:184.020 - 0.022ms returns 0x01
+T6BF4 000:184.029 JLINK_GetHardwareVersion()
+T6BF4 000:184.039 - 0.006ms returns 70000
+T6BF4 000:184.047 JLINK_GetDLLVersion()
+T6BF4 000:184.053 - 0.006ms returns 81005
+T6BF4 000:184.062 JLINK_GetOEMString(...)
+T6BF4 000:184.071 JLINK_GetFirmwareString(...)
+T6BF4 000:184.079 - 0.007ms
+T6BF4 000:213.454 JLINK_GetDLLVersion()
+T6BF4 000:213.489 - 0.035ms returns 81005
+T6BF4 000:213.500 JLINK_GetCompileDateTime()
+T6BF4 000:213.506 - 0.006ms
+T6BF4 000:221.795 JLINK_GetFirmwareString(...)
+T6BF4 000:221.836 - 0.042ms
+T6BF4 000:230.483 JLINK_GetHardwareVersion()
+T6BF4 000:230.519 - 0.036ms returns 70000
+T6BF4 000:238.194 JLINK_GetSN()
+T6BF4 000:238.226 - 0.031ms returns 20090928
+T6BF4 000:247.647 JLINK_GetOEMString(...)
+T6BF4 000:265.235 JLINK_TIF_Select(JLINKARM_TIF_JTAG)
+T6BF4 000:268.100 - 2.864ms returns 0x00
+T6BF4 000:268.131 JLINK_HasError()
+T6BF4 000:268.154 JLINK_SetSpeed(5000)
+T6BF4 000:268.530 - 0.378ms
+T6BF4 000:268.558 JLINK_GetIdData(pIdData)
+T6BF4 000:276.934   ConfigTargetSettings() start
+T6BF4 000:276.979    J-Link Script File: Executing ConfigTargetSettings()
+T6BF4 000:285.117   ConfigTargetSettings() end - Took 46us
+T6BF4 000:295.194   InitTarget() start
+T6BF4 000:295.231    J-Link Script File: Executing InitTarget()
+T6BF4 000:302.682   JTAG selected. Identifying JTAG Chain...
+T6BF4 000:313.798   Could not measure total IR len. TDO is constant high.
+T6BF4 000:322.296   Error: Scanning JTAG chain failed.
+T6BF4 000:330.431   Can not attach to CPU. Trying connect under reset.
+T6BF4 000:389.265   JTAG selected. Identifying JTAG Chain...
+T6BF4 000:399.136   Could not measure total IR len. TDO is constant high.
+T6BF4 000:408.767   Error: Scanning JTAG chain failed.
+T6BF4 000:416.899   Connecting to CPU via connect under reset failed.
+T6BF4 000:478.054   InitTarget() end - Took 172ms
+T6BF4 000:484.379   Connect failed. Resetting via Reset pin and trying again.
+T6BF4 000:554.149   ConfigTargetSettings() start
+T6BF4 000:554.200    J-Link Script File: Executing ConfigTargetSettings()
+T6BF4 000:562.591   ConfigTargetSettings() end - Took 29us
+T6BF4 000:571.362   InitTarget() start
+T6BF4 000:571.416    J-Link Script File: Executing InitTarget()
+T6BF4 000:579.303   JTAG selected. Identifying JTAG Chain...
+T6BF4 000:587.934   Could not measure total IR len. TDO is constant high.
+T6BF4 000:596.214   Error: Scanning JTAG chain failed.
+T6BF4 000:602.240   Can not attach to CPU. Trying connect under reset.
+T6BF4 000:661.980   JTAG selected. Identifying JTAG Chain...
+T6BF4 000:671.337   Could not measure total IR len. TDO is constant high.
+T6BF4 000:678.703   Error: Scanning JTAG chain failed.
+T6BF4 000:685.842   Connecting to CPU via connect under reset failed.
+T6BF4 000:743.703   InitTarget() end - Took 166ms
+T6BF4 000:743.733 - 475.174ms
+T6BF4 002:243.078 JLINK_Close()
+T6BF4 002:261.266 - 18.186ms
+T6BF4 002:261.299   
+T6BF4 002:261.306   Closed

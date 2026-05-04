@@ -9,7 +9,7 @@ if(NOT CMAKE_TOOLCHAIN_FILE)
     message(STATUS "CMAKE_TOOLCHAIN_FILE is not set; using PATH for arm-none-eabi tool lookup")
 endif()
 
-if(NOT CMAKE_OBJCOPY)
+if(NOT CMAKE_OBJCOPY)comprehensive-裸机调参
     find_program(CMAKE_OBJCOPY NAMES arm-none-eabi-objcopy REQUIRED)
 endif()
 
@@ -43,6 +43,14 @@ add_subdirectory(cmake/stm32cubemx)
 set_source_files_properties(
     ${CMAKE_SOURCE_DIR}/startup_stm32h723xx.s
     PROPERTIES LANGUAGE ASM
+)
+
+target_sources(Ctrboard-H7-bottom-core PRIVATE
+    ${CMAKE_SOURCE_DIR}/Core/Src/app/vofa_debug.c
+    ${CMAKE_SOURCE_DIR}/Core/Src/app/oled_debug.c
+    ${CMAKE_SOURCE_DIR}/Core/Src/app/crsf_task.c
+    ${CMAKE_SOURCE_DIR}/Core/Src/app/crsf_protocol.c
+    ${CMAKE_SOURCE_DIR}/Core/Src/app/motor_control_task.c
 )
 
 # Additional clean files

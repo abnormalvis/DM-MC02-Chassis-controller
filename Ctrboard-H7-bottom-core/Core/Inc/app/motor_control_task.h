@@ -1,7 +1,7 @@
 /**
  * @file motor_control_task.h
  * @brief 电机控制任务
- * @description 双电机目标控制与 CAN 下发
+ * @description 双电机目标控制与本地 PWM 输出
  */
 
 #ifndef MOTOR_CONTROL_TASK_H
@@ -36,12 +36,12 @@ typedef struct {
 
 /* 电机控制状态 */
 typedef struct {
-    int16_t current_a;        /* 当前电流 0.01A (来自C8T6) */
-    int16_t current_b;        /* 当前电流 0.01A (来自C8T6) */
-    int16_t target_rpm_a;    /* 目标转速 rpm */
-    int16_t target_rpm_b;    /* 目标转速 rpm */
-    int16_t actual_rpm_a;    /* 实际转速 rpm (预留编码器) */
-    int16_t actual_rpm_b;    /* 实际转速 rpm (预留编码器) */
+    int16_t current_a;         /* 当前电流 0.01A (本地ADC估算) */
+    int16_t current_b;         /* 当前电流 0.01A (本地ADC估算) */
+    int16_t target_rpm_a;      /* 兼容保留，当前用于目标电流A(0.01A) */
+    int16_t target_rpm_b;      /* 兼容保留，当前用于目标电流B(0.01A) */
+    int16_t actual_rpm_a;      /* 兼容保留，当前用于PWM命令A */
+    int16_t actual_rpm_b;      /* 兼容保留，当前用于PWM命令B */
     bool brake_active;        /* 刹车激活 */
 } motor_control_state_t;
 
@@ -73,7 +73,7 @@ void MotorControlTask_Brake(void);
 void MotorControlTask_ReleaseBrake(void);
 
 /**
- * @brief 设置控制标志位 (CAN_DRIVE_FLAG_xxx)
+ * @brief 设置控制标志位 (兼容保留)
  */
 void MotorControlTask_SetControlFlags(uint8_t flags);
 

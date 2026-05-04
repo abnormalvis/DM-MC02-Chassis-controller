@@ -29,3 +29,25 @@
 **/*.axf
 **/*.lst
 .vscode/settings.json
+H743VGT6/
+comprehensive-裸机调参/
+Motor_Tuning_PID/
+0.cubeMX配置参考/0.cubeMX配置参考/Drivers/STM32H7xx_HAL_Driver/Inc/
+0.cubeMX配置参考/0.cubeMX配置参考/Drivers/STM32H7xx_HAL_Driver/Src/*.c
+0.cubeMX配置参考/0.cubeMX配置参考/Drivers/CMSIS/Include/
+0.cubeMX配置参考/0.cubeMX配置参考/Drivers/STM32H7xx_HAL_Driver/Src/
+0.cubeMX配置参考/0.cubeMX配置参考/MDK-ARM/STM32H743/*.d
+0.cubeMX配置参考/0.cubeMX配置参考/MDK-ARM/STM32H743/*.crf
+Motor_ Tuning_PID/Drivers/CMSIS/Include/*.h
+Motor_ Tuning_PID/Drivers/STM32F4xx_HAL_Driver/Inc/*.h
+Motor_ Tuning_PID/MDK-ARM/Motor_ Tuning_PID/*.crf
+Motor_ Tuning_PID/MDK-ARM/.vscode/*.log
+0.cubeMX配置参考/0.cubeMX配置参考/MDK-ARM/STM32H743/*.sct
+Motor_ Tuning_PID/MDK-ARM/Motor_ Tuning_PID/*.d
+Motor_ Tuning_PID/MDK-ARM/Motor_ Tuning_PID/*.sct
+Motor_ Tuning_PID/MDK-ARM/RTE/Device/STM32F407IGHx/
+Motor_ Tuning_PID/MDK-ARM/Motor_ Tuning_PID/*.lnp
+0.cubeMX配置参考/0.cubeMX配置参考/MDK-ARM/RTE/Device/STM32H750VBTx/*.dbgconf
+Motor_ Tuning_PID/Drivers/STM32F4xx_HAL_Driver/
+Motor_ Tuning_PID/MDK-ARM/
+Motor_ Tuning_PID/

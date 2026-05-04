@@ -6,7 +6,6 @@
 #include "safety_task.h"
 
 #include "main.h"
-#include "can_task.h"
 #include "crsf_task.h"
 #include "imu_task.h"
 #include "motor_control_task.h"
@@ -22,7 +21,7 @@ static uint32_t s_fault_bits = 0U;
 static control_mode_t s_mode = MODE_IDLE;
 static uint32_t s_fault_clear_tick = 0U;
 
-#define FAULT_BRAKE_MASK (FAULT_RC_TIMEOUT | FAULT_CAN_TIMEOUT | FAULT_IMU_FAULT)
+#define FAULT_BRAKE_MASK (FAULT_RC_TIMEOUT | FAULT_IMU_FAULT)
 
 static void safety_sync_fault_to_app(uint32_t fault, uint8_t set)
 {
@@ -116,15 +115,6 @@ void SafetyTask_Process(void *argument)
     else
     {
         safety_clear_fault_internal(FAULT_RC_TIMEOUT);
-    }
-
-    if (!CANTask_IsConnected())
-    {
-        safety_set_fault_internal(FAULT_CAN_TIMEOUT);
-    }
-    else
-    {
-        safety_clear_fault_internal(FAULT_CAN_TIMEOUT);
     }
 
     if (!IMUTask_IsReady())
